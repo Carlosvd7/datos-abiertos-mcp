@@ -19,6 +19,7 @@ construir-datos = "datos_abiertos_mcp.pipeline.construir:main"
 servidor-mcp = "datos_abiertos_mcp.servidor_mcp:main"
 preguntar = "datos_abiertos_mcp.agente:main"
 evaluar = "datos_abiertos_mcp.evaluacion:main"
+demo = "datos_abiertos_mcp.web.app:main"
 
 [build-system]
 requires = ["uv_build>=0.13.10,<0.14.0"]

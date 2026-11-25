@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Habla con los datos públicos de España</title>
+  <meta name="description" content="Pregunta en lenguaje natural sobre paro, población, inflación y precios de carburantes en España. Un agente de IA traduce tu pregunta a SQL sobre datos oficiales del INE y del Ministerio.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='9' width='3' height='6' rx='1' fill='%232a78d6'/%3E%3Crect x='6.5' y='5' width='3' height='10' rx='1' fill='%232a78d6'/%3E%3Crect x='12' y='1' width='3' height='14' rx='1' fill='%232a78d6'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="/static/estilos.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <header class="cabecera">
+    <div class="contenedor">
+      <p class="antetitulo">Agente de IA · servidor MCP · DuckDB</p>
+      <h1>Habla con los datos públicos de España</h1>
+      <p class="entradilla">
+        Pregunta sobre <strong>paro</strong>, <strong>población</strong>, <strong>inflación</strong> o
+        <strong>precios de carburantes</strong>. Claude traduce tu pregunta a SQL, la ejecuta sobre
+        datos oficiales del INE y del Ministerio para la Transición Ecológica, y te enseña la respuesta,
+        la consulta y la fuente.
+      </p>
+    </div>
+  </header>
+
+  <main class="contenedor">
+    <form id="formulario" class="formulario" autocomplete="off">
+      <label for="pregunta" class="visualmente-oculto">Tu pregunta</label>
+      <textarea id="pregunta" name="pregunta" rows="2" maxlength="300" required
+        placeholder="Por ejemplo: ¿qué comunidad tiene más paro?"></textarea>
+      <div class="formulario-pie">
+        <span id="contador" class="ayuda" aria-live="polite"></span>
+        <button id="enviar" type="submit">Preguntar</button>
+      </div>
+    </form>
+
+    <section aria-labelledby="titulo-ejemplos" class="ejemplos">
+      <h2 id="titulo-ejemplos" class="visualmente-oculto">Preguntas de ejemplo</h2>
+      <div id="lista-ejemplos" class="chips"></div>
+    </section>
+
+    <section id="estado" class="estado" aria-live="polite" hidden></section>
+
+    <article id="resultado" class="resultado" hidden>
+      <div id="respuesta" class="respuesta"></div>
+      <figure id="grafica" class="grafica" hidden>
+        <figcaption id="grafica-titulo"></figcaption>
+        <div id="grafica-svg"></div>
+        <div id="grafica-leyenda" class="leyenda"></div>
+      </figure>
+      <details id="detalle-sql">
+        <summary>Consulta SQL ejecutada</summary>
+        <pre><code id="sql"></code></pre>
+      </details>
+      <details id="detalle-tabla">
+        <summary>Datos devueltos</summary>
+        <div class="tabla-scroll"><table id="tabla"></table></div>
+        <p id="tabla-nota" class="ayuda"></p>
+      </details>
+      <section class="fuentes">
+        <h2>Fuentes</h2>
+        <ul id="fuentes"></ul>
+      </section>
+      <p id="metadatos" class="ayuda"></p>
+    </article>
+
+    <section class="como-funciona" aria-labelledby="titulo-como">
+      <h2 id="titulo-como">Cómo funciona</h2>
+      <ol>
+        <li>Un <strong>pipeline</strong> descarga los datos de las APIs oficiales, los limpia y los guarda en <strong>DuckDB</strong> con una descripción de cada tabla y columna.</li>
+        <li>Un <strong>servidor MCP</strong> propio expone herramientas para listar tablas, describirlas y ejecutar SQL de <strong>solo lectura</strong> (una única consulta, sin escritura ni acceso a ficheros, 10 s y 500 filas como máximo).</li>
+        <li><strong>Claude</strong> usa esas herramientas para escribir y corregir el SQL, y responde solo con los números que devuelve la base de datos.</li>
+      </ol>
+      <p>Datos disponibles:</p>
+      <ul id="tablas" class="tablas"></ul>
+      <p class="ayuda">
+        Límite de uso: unas pocas preguntas por hora para cada visitante. Las respuestas las genera un modelo de IA:
+        revisa la consulta y la fuente antes de usar una cifra.
+      </p>
+    </section>
+  </main>
+
+  <footer class="pie">
+    <div class="contenedor">
+      <p>
+        Proyecto de <a href="https://carlosmanuelvelazquez.netlify.app">Carlos Manuel Velázquez Diego</a> ·
+        <a href="https://github.com/Carlosvd7/datos-abiertos-mcp">Código en GitHub</a> ·
+        Datos: INE (CC BY 4.0) y Ministerio para la Transición Ecológica y el Reto Demográfico.
+      </p>
+    </div>
+  </footer>
+</body>
+</html>

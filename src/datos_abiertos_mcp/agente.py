@@ -22,6 +22,8 @@ from typing import Any
 from anthropic import AsyncAnthropic
 from mcp import Client, StdioServerParameters
 
+from datos_abiertos_mcp import config  # noqa: F401  (carga .env antes de leer las variables)
+
 MODELO = os.environ.get("CLAUDE_MODELO", "claude-opus-5-5")
 ESFUERZO = os.environ.get("CLAUDE_ESFUERZO", "medium")
 MAX_PASOS = 10
