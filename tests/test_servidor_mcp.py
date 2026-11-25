@@ -28,7 +28,9 @@ async def test_consultar_sql_devuelve_resultado_y_fuente(servidor):
     async with Client(servidor) as cliente:
         r = await cliente.call_tool(
             "consultar_sql",
-            {"sql": "SELECT tasa_paro FROM paro_epa WHERE periodo='2026T4' AND codigo_ccaa='13' AND sexo='Total'"},
+            {
+                "sql": "SELECT tasa_paro FROM paro_epa WHERE periodo='2026T4' AND codigo_ccaa='13' AND sexo='Total'"
+            },
         )
     assert not r.is_error
     datos = r.structured_content

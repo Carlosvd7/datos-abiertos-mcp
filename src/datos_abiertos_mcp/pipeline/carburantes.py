@@ -111,7 +111,6 @@ def filas_estaciones(respuesta: dict[str, Any]) -> list[tuple]:
                 _num(e.get("Latitud")),
                 _num(e.get("Longitud (WGS84)")),
                 (e.get("Horario") or "").strip(),
-                "público" if e.get("Tipo Venta") == "P" else "restringido",
                 *(_num(e.get(campo)) for campo in CARBURANTES),
             )
         )

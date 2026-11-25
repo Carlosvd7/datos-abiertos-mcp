@@ -71,8 +71,10 @@ class Respuesta:
     grafica: dict[str, Any] | None = None
     pasos: list[Paso] = field(default_factory=list)
     resultado_final: dict[str, Any] | None = None  # último resultado de consultar_sql correcto
-    tokens_entrada: int = 0
+    tokens_entrada: int = 0  # total de entrada (sin caché + lecturas + escrituras de caché)
     tokens_salida: int = 0
+    tokens_cache_lectura: int = 0
+    tokens_cache_escritura: int = 0
     segundos: float = 0.0
     modelo: str = MODELO
     modelos_servidos: list[str] = field(default_factory=list)  # por si actúa el fallback
@@ -133,11 +135,11 @@ class Agente:
                 betas=BETAS,
                 fallbacks="default",
             )
-            r.tokens_entrada += (
-                mensaje.usage.input_tokens
-                + (mensaje.usage.cache_read_input_tokens or 0)
-                + (mensaje.usage.cache_creation_input_tokens or 0)
-            )
+            lectura = mensaje.usage.cache_read_input_tokens or 0
+            escritura = mensaje.usage.cache_creation_input_tokens or 0
+            r.tokens_entrada += mensaje.usage.input_tokens + lectura + escritura
+            r.tokens_cache_lectura += lectura
+            r.tokens_cache_escritura += escritura
             r.tokens_salida += mensaje.usage.output_tokens
             r.llamadas_modelo += 1
             servido = getattr(mensaje, "model", self.modelo)

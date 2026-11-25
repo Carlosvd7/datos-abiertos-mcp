@@ -173,8 +173,8 @@ TABLAS: list[Tabla] = [
     ),
     Tabla(
         "gasolineras",
-        "Foto de todas las gasolineras de España con sus precios (€/litro) en vigor en la fecha "
-        "de descarga. Precio NULL = esa gasolinera no vende ese carburante.",
+        "Foto de todas las gasolineras de venta al público de España con sus precios (€/litro) en "
+        "vigor en la fecha de descarga. Precio NULL = esa gasolinera no vende ese carburante.",
         [
             C("id_estacion", "VARCHAR", "Identificador de la estación en el Geoportal."),
             C("fecha_precios", "DATE", "Fecha de la foto de precios."),
@@ -191,7 +191,6 @@ TABLAS: list[Tabla] = [
             C("latitud", "DOUBLE", "Latitud WGS84."),
             C("longitud", "DOUBLE", "Longitud WGS84."),
             C("horario", "VARCHAR", "Horario tal como lo declara la estación."),
-            C("tipo_venta", "VARCHAR", "'público' o 'restringido' (solo para clientes/socios)."),
             C("gasolina_95", "DOUBLE", "Precio de la gasolina 95 E5, €/litro."),
             C("gasolina_98", "DOUBLE", "Precio de la gasolina 98 E5, €/litro."),
             C("gasoleo_a", "DOUBLE", "Precio del gasóleo A (diésel normal), €/litro."),

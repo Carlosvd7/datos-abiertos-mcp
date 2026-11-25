@@ -121,8 +121,7 @@ def test_carburantes_convierte_decimales_con_coma_y_vacios():
     assert fila[1] == date(2026, 11, 25)
     assert fila[2] == "REPSOL"
     assert fila[8:10] == (39.211417, -1.539167)
-    assert fila[11] == "público"
-    assert fila[12:] == (1.399, None, 1.699, None, None)
+    assert fila[11:] == (1.399, None, 1.699, None, None)
 
 
 def test_agregado_semanal_en_sql_solo_venta_al_publico(tmp_path):
