@@ -108,6 +108,8 @@ RESPUESTA_CARBURANTES = {
             "Precio Gasolina 95 E5": "1,399",
             "Precio Gasoleo A": "1,699",
             "Precio Gasolina 98 E5": "",
+            "Precio Gasoleo Premium": "",
+            "Precio Gases licuados del petróleo": "",
         },
         {"IDEESS": "2", "IDCCAA": "13", "Tipo Venta": "R", "Precio Gasoleo A": "1,500"},
     ],
@@ -123,12 +125,31 @@ def test_carburantes_convierte_decimales_con_coma_y_vacios():
     assert fila[12:] == (1.399, None, 1.699, None, None)
 
 
-def test_precios_dia_solo_venta_al_publico():
-    filas = carburantes.filas_precios_dia(RESPUESTA_CARBURANTES)
-    assert sorted(filas) == [
-        (date(2026, 11, 25), "08", "gasoleo_a", 1.699),
-        (date(2026, 11, 25), "08", "gasolina_95", 1.399),
-    ]
+def test_agregado_semanal_en_sql_solo_venta_al_publico(tmp_path):
+    import json
+
+    import duckdb
+
+    otra = {
+        "IDEESS": "3",
+        "IDCCAA": "08",
+        "Tipo Venta": "P",
+        "Precio Gasolina 95 E5": "1,501",
+        "Precio Gasoleo A": "",
+        "Precio Gasolina 98 E5": "",
+    }
+    datos = {**RESPUESTA_CARBURANTES, "ListaEESSPrecio": [*RESPUESTA_CARBURANTES["ListaEESSPrecio"], otra]}
+    ruta = tmp_path / "hist_2026-11-25.json"
+    ruta.write_text(json.dumps(datos, ensure_ascii=False), encoding="utf-8")
+    filas = duckdb.connect().execute(carburantes.sql_semanal([ruta])).fetchall()
+    por_clave = {(f[1], f[2]): f[3:] for f in filas}
+    # la gasolinera de venta restringida ('R', comunidad 13) no cuenta
+    assert ("13", "gasoleo_a") not in por_clave
+    assert por_clave[("08", "gasolina_95")] == (1.45, 1.45, 1.399, 1.501, 2)
+    assert por_clave[("08", "gasoleo_a")] == (1.699, 1.699, 1.699, 1.699, 1)
+    # total nacional
+    assert por_clave[("00", "gasolina_95")][-1] == 2
+    assert all(f[0] == date(2026, 11, 25) for f in filas)
 
 
 def test_lunes_anteriores():

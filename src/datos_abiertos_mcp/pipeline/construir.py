@@ -9,10 +9,13 @@ Uso:
 from __future__ import annotations
 
 import argparse
+import csv
 import logging
 import os
+import tempfile
 import time
 from datetime import UTC, date, datetime, timedelta
+from pathlib import Path
 
 import duckdb
 
@@ -33,10 +36,19 @@ def lunes_anteriores(hasta: date, semanas: int) -> list[date]:
 
 
 def _insertar(con: duckdb.DuckDBPyConnection, tabla: str, filas: list[tuple]) -> None:
+    """Carga masiva vía CSV temporal (mucho más rápido que insertar fila a fila)."""
     if not filas:
         raise RuntimeError(f"La tabla {tabla} se quedaría vacía; revisa la descarga")
-    marcadores = ", ".join("?" * len(filas[0]))
-    con.executemany(f"INSERT INTO {tabla} VALUES ({marcadores})", filas)
+    with tempfile.TemporaryDirectory() as carpeta:
+        ruta = Path(carpeta) / f"{tabla}.csv"
+        with ruta.open("w", newline="", encoding="utf-8") as f:
+            csv.writer(f).writerows(filas)
+        columnas = [c[0] for c in con.execute(f"DESCRIBE {tabla}").fetchall()]
+        tipos = {c[0]: c[1] for c in con.execute(f"DESCRIBE {tabla}").fetchall()}
+        con.execute(
+            f"INSERT INTO {tabla} SELECT * FROM read_csv(?, header = false, columns = ?, nullstr = '')",
+            [str(ruta), {c: tipos[c] for c in columnas}],
+        )
     log.info("  %-20s %8d filas", tabla, len(filas))
 
 
@@ -65,7 +77,7 @@ def construir(*, refrescar: bool = False, semanas: int = 26, hoy: date | None = 
 
     log.info("Descargando carburantes (foto actual + %d lunes)...", semanas)
     actual = carburantes.descargar_actual(refrescar=refrescar)
-    dias = [carburantes.descargar_dia(d) for d in lunes_anteriores(hoy, semanas)]
+    rutas_dias = [carburantes.asegurar_dia(d) for d in lunes_anteriores(hoy, semanas)]
 
     log.info("Transformando y cargando en DuckDB...")
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -83,23 +95,8 @@ def construir(*, refrescar: bool = False, semanas: int = 26, hoy: date | None = 
         _insertar(con, "ipc", modelos.filas_ipc(ine.observaciones(ipc)))
         _insertar(con, "gasolineras", carburantes.filas_estaciones(actual))
 
-        # Histórico de carburantes: staging en formato largo y agregación en SQL.
-        con.execute(
-            "CREATE TEMP TABLE stg_precios (fecha DATE, codigo_ccaa VARCHAR, carburante VARCHAR, precio DOUBLE)"
-        )
-        for dia in dias:
-            con.executemany("INSERT INTO stg_precios VALUES (?, ?, ?, ?)", carburantes.filas_precios_dia(dia))
-        con.execute(
-            """
-            INSERT INTO carburantes_semanal
-            SELECT fecha, COALESCE(codigo_ccaa, '00') AS codigo_ccaa, carburante,
-                   round(avg(precio), 3), round(median(precio), 3),
-                   min(precio), max(precio), count(*)::INTEGER
-            FROM stg_precios
-            GROUP BY GROUPING SETS ((fecha, carburante, codigo_ccaa), (fecha, carburante))
-            ORDER BY ALL
-            """
-        )
+        # Histórico de carburantes: DuckDB lee y agrega los JSON diarios directamente (ELT).
+        con.execute("INSERT INTO carburantes_semanal " + carburantes.sql_semanal(rutas_dias))
         log.info(
             "  %-20s %8d filas",
             "carburantes_semanal",
@@ -147,7 +144,12 @@ def _cargar_fuentes(con: duckdb.DuckDBPyConnection) -> None:
 
 
 def _validar(con: duckdb.DuckDBPyConnection) -> None:
-    """Comprobaciones de calidad: si alguna falla, el pipeline se detiene."""
+    """Comprobaciones de calidad: si alguna falla, el pipeline se detiene.
+
+    Tolerancia de 10 personas en las sumas de población: en las series retroestimadas de
+    2002-2012 el total publicado por el INE difiere de la suma de edades simples en hasta
+    9 personas (sobre decenas de millones). Se conservan los totales oficiales.
+    """
     comprobaciones = {
         "códigos de comunidad desconocidos": """
             SELECT count(*) FROM (
@@ -160,13 +162,13 @@ def _validar(con: duckdb.DuckDBPyConnection) -> None:
                      sum(habitantes) FILTER (WHERE grupo_edad <> 'Total') AS suma,
                      max(habitantes) FILTER (WHERE grupo_edad = 'Total') AS total
               FROM poblacion GROUP BY ALL
-            ) WHERE abs(suma - total) > 1""",
+            ) WHERE abs(suma - total) > 10""",
         "comunidades que no suman la población nacional": """
             SELECT count(*) FROM (
               SELECT anio, sum(habitantes) FILTER (WHERE codigo_ccaa <> '00') AS suma,
                      max(habitantes) FILTER (WHERE codigo_ccaa = '00') AS total
               FROM poblacion WHERE sexo = 'Total' AND grupo_edad = 'Total' GROUP BY anio
-            ) WHERE abs(suma - total) > 1""",
+            ) WHERE abs(suma - total) > 10""",
         "tasas de paro fuera de rango": "SELECT count(*) FROM paro_epa WHERE tasa_paro NOT BETWEEN 0 AND 100",
         "precios de carburante absurdos": """
             SELECT count(*) FROM carburantes_semanal WHERE precio_medio NOT BETWEEN 0.3 AND 5""",
