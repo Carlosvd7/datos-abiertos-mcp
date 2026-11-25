@@ -1,0 +1,43 @@
+[project]
+name = "datos-abiertos-mcp"
+version = "0.1.0"
+description = "Habla con los datos públicos de España: servidor MCP + agente text-to-SQL sobre datos abiertos (INE, MITECO) en DuckDB"
+authors = [{ name = "Carlos Manuel Velázquez Diego" }]
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=2.14.0",
+    "duckdb>=2.0.1",
+    "fastapi>=0.165.0",
+    "httpx>=0.28.1",
+    "mcp[cli]>=2.3.0",
+    "sqlglot>=30.35.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[project.scripts]
+construir-datos = "datos_abiertos_mcp.pipeline.construir:main"
+servidor-mcp = "datos_abiertos_mcp.servidor_mcp:main"
+
+[build-system]
+requires = ["uv_build>=0.13.10,<0.14.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.5.0",
+    "ruff>=0.17.6",
+]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM"]
+ignore = ["E501"]  # el formateador ya ajusta el código; las descripciones largas se dejan en una línea
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
