@@ -4,6 +4,10 @@
 oficiales de España (paro, población, inflación y precios de carburantes), enseñando la cifra, la
 consulta SQL que la produjo y la fuente.**
 
+**🔗 Web: [carlosvd7.github.io/datos-abiertos-mcp](https://carlosvd7.github.io/datos-abiertos-mcp/)**
+(escaparate con respuestas reales del agente a las preguntas de ejemplo; para preguntas libres,
+[ejecútalo en local](#cómo-ejecutarlo)).
+
 > *English summary below.*
 
 **Resultados de la evaluación (40 preguntas × 2 repeticiones, Claude Haiku 5.5):** el **100 %** de
@@ -39,8 +43,17 @@ Este proyecto conecta un modelo de lenguaje con **datos reales y actualizados** 
 |---|---|
 | <img src="docs/img/portada.png" alt="Portada de la demo con el cuadro de pregunta y seis preguntas de ejemplo" width="420"> | <img src="docs/img/respuesta.png" alt="Respuesta con gráfica, SQL y fuente" width="300"> |
 
-Cada visitante puede hacer una pregunta propia al día; las de ejemplo se responden al instante desde
-caché. Los enlaces `/?q=<pregunta>` abren la demo con esa pregunta ya escrita.
+La demo tiene dos modos con la misma página:
+
+- **Escaparate público** ([carlosvd7.github.io/datos-abiertos-mcp](https://carlosvd7.github.io/datos-abiertos-mcp/),
+  GitHub Pages): sin servidor ni clave de API. Muestra las respuestas reales que el agente dio a las
+  6 preguntas de ejemplo, con su gráfica, SQL y fuente. Se regenera con
+  `uv run python scripts/generar_escaparate.py` (~0,01 $).
+- **Demo completa** (`uv run demo`, o desplegada con el `Dockerfile`): preguntas libres. Cada visitante
+  puede hacer una propia al día; las de ejemplo se responden al instante desde caché, y un presupuesto
+  diario en dólares limita el gasto.
+
+Los enlaces `?q=<pregunta>` abren la demo con esa pregunta ya escrita.
 
 ## Qué se puede preguntar
 
@@ -330,6 +343,8 @@ showing the figure, the SQL that produced it and the source.
 - **Results** (40 questions × 2 runs, Claude Haiku 5.5): **100 %** of final answers judged correct,
   **88 %** execution accuracy (the SQL itself returns the reference answer; 55 % before a one-line
   prompt change asking the agent to do all arithmetic in SQL), ~$0.001 and ~5 s per question.
+- **Live showcase**: https://carlosvd7.github.io/datos-abiertos-mcp/ (real agent answers to the example
+  questions, static on GitHub Pages).
 - **Web demo**: FastAPI + dependency-free page; API key server-side only, per-IP and global rate limits,
   strict CSP, accessible SVG charts. Dockerfile included.
 
