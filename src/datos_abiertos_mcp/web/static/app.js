@@ -377,8 +377,14 @@ async function iniciar() {
       return chip;
     }));
     $("tablas").replaceChildren(...info.tablas.filter((t) => t.fuente).map((t) =>
-      el("li", {}, [el("code", { texto: t.tabla }), ` — ${t.descripcion.split(". ")[0]}. Hasta ${t.datos_hasta}.`])));
+      el("li", {}, [el("code", { texto: t.tabla }), ` — ${t.descripcion.split(". ")[0].replace(/\.$/, "")}. Hasta ${t.datos_hasta}.`])));
     restantes(info.restantes);
+    // Enlaces compartibles: /?q=pregunta rellena la pregunta; si es un ejemplo (gratis, en caché), la lanza.
+    const q = new URLSearchParams(location.search).get("q");
+    if (q) {
+      $("pregunta").value = q.slice(0, 300);
+      if (info.ejemplos.includes(q)) preguntar(q);
+    }
   } catch {
     estado("No se ha podido cargar la información de la demo.", { error: true });
   }

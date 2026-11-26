@@ -11,6 +11,11 @@ las respuestas son correctas según un juez independiente, y en el **88 %** de l
 SQL devuelve exactamente la cifra de referencia. Cuesta **~0,001 $ por pregunta** y tarda **~5 s**
 (mediana). [Detalles](#resultados).
 
+<p align="center">
+  <img src="docs/img/respuesta.png" alt="Respuesta de la demo a «¿Qué comunidades tienen más paro?»: texto con las cifras, tabla, gráfica de barras de las 19 comunidades, consulta SQL desplegable y fuente del INE con su licencia" width="720">
+</p>
+<p align="center"><em>Respuesta real de la demo (Claude Haiku 5.5, datos del INE del 3T 2026).</em></p>
+
 ---
 
 ## El problema
@@ -27,6 +32,15 @@ Este proyecto conecta un modelo de lenguaje con **datos reales y actualizados** 
 - el usuario ve esa consulta, los datos devueltos y la fuente con su licencia;
 - el modelo **no puede** modificar los datos, leer ficheros del servidor ni salirse de las tablas publicadas;
 - la calidad se **mide** con un conjunto de preguntas de respuesta conocida, no se supone.
+
+## La demo
+
+| Portada | Respuesta |
+|---|---|
+| <img src="docs/img/portada.png" alt="Portada de la demo con el cuadro de pregunta y seis preguntas de ejemplo" width="420"> | <img src="docs/img/respuesta.png" alt="Respuesta con gráfica, SQL y fuente" width="300"> |
+
+Cada visitante puede hacer una pregunta propia al día; las de ejemplo se responden al instante desde
+caché. Los enlaces `/?q=<pregunta>` abren la demo con esa pregunta ya escrita.
 
 ## Qué se puede preguntar
 
