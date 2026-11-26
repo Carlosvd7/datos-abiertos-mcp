@@ -42,6 +42,7 @@ from mcp import Client
 from pydantic import BaseModel
 
 from datos_abiertos_mcp import agente
+from datos_abiertos_mcp.agente import PRECIOS, coste_usd
 from datos_abiertos_mcp.almacen import Almacen
 from datos_abiertos_mcp.config import ROOT
 from datos_abiertos_mcp.pipeline.modelos import COMUNIDADES
@@ -51,13 +52,6 @@ RESULTADOS = ROOT / "eval" / "resultados"
 MODELO_JUEZ = "claude-sonnet-5-5"
 TIEMPO_MAX_CASO_S = 300
 
-# Precios públicos por millón de tokens (USD): entrada, salida, lectura de caché, escritura de caché.
-PRECIOS = {
-    "claude-opus-5-5": (4.00, 20.00, 0.20, 5.00),
-    "claude-sonnet-5-5": (2.00, 10.00, 0.10, 2.50),
-    # Haiku 5.5: precio publicado hasta 100K tokens de prompt; caché estimada a 0,1x / 1,25x.
-    "claude-haiku-5-5": (0.10, 0.50, 0.01, 0.125),
-}
 
 COMPARACIONES = {"valor", "filas", "filas_ordenadas", "sin_datos"}
 
@@ -234,17 +228,6 @@ async def juzgar(cliente: AsyncAnthropic, caso: Caso, oro: list[list[Any]] | Non
 
 
 # --- Ejecución -----------------------------------------------------------------------------
-def coste_usd(modelo: str, r: dict) -> float:
-    precio = PRECIOS.get(modelo)
-    if precio is None:
-        return float("nan")
-    sin_cache = r["tokens_entrada"] - r["tokens_cache_lectura"] - r["tokens_cache_escritura"]
-    return (
-        sin_cache * precio[0]
-        + r["tokens_salida"] * precio[1]
-        + r["tokens_cache_lectura"] * precio[2]
-        + r["tokens_cache_escritura"] * precio[3]
-    ) / 1e6
 
 
 async def evaluar_caso(

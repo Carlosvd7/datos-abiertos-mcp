@@ -108,7 +108,8 @@ capas independientes:
 | **Base de datos** | DuckDB se abre en modo **solo lectura**, con `enable_external_access = false` (no puede leer ni escribir ficheros ni URLs), sin instalar ni cargar extensiones, con la configuración bloqueada (`lock_configuration`), 512 MB de memoria y 2 hilos. |
 | **Validación del SQL** | Con `sqlglot`: una sola sentencia; tiene que ser una consulta (`SELECT`/`WITH`/`UNION`); solo puede leer las tablas publicadas (ni `information_schema`, ni otras bases de datos, ni funciones de tabla como `read_csv` o `glob`); se rechazan funciones como `getenv`, `current_setting`, `read_*`… |
 | **Ejecución** | Límite de **10 s** por consulta (se interrumpe) y de **500 filas** devueltas. |
-| **Demo web** | La clave de Claude solo existe en el servidor; límites por IP (5 preguntas/hora, 20/día) y tope global de 50 preguntas/día; preguntas de 3 a 300 caracteres; Content-Security-Policy estricta; el texto del modelo se inserta siempre como texto, nunca como HTML. |
+| **Demo web (gasto)** | La clave de Claude solo existe en el servidor. **1 pregunta propia por visitante y día**; las respuestas ya calculadas (p. ej. las de ejemplo) se sirven **desde caché, gratis** y sin gastar el cupo. **Presupuesto diario en dólares** calculado con los tokens reales de cada respuesta (0,15 $ por defecto): al superarlo la demo se pausa hasta el día siguiente, aunque alguien cambie de IP. Tope global de 50 preguntas/día y peor caso por pregunta acotado (6 pasos, 4.000 tokens por respuesta). |
+| **Demo web (navegador)** | Preguntas de 3 a 300 caracteres; Content-Security-Policy estricta; el texto del modelo se inserta siempre como texto, nunca como HTML. |
 | **Secretos** | El subproceso MCP no recibe la clave de la API (no la necesita). `.env` está en `.gitignore`. |
 
 Los tests (`tests/test_seguridad.py`) prueban más de 30 intentos de abuso: `DROP`, `COPY … TO`,
@@ -256,8 +257,10 @@ veredicto del juez), están en `eval/resultados/`.
 - **La evaluación es pequeña** (40 preguntas): los intervalos de confianza son amplios y una sola
   pregunta mueve ~3 puntos. Mide bien regresiones grandes, no diferencias finas entre modelos. El
   juez es otro modelo de lenguaje y puede equivocarse (se encontró un error suyo al revisar a mano).
-- **El límite de uso de la demo vive en memoria**: vale para una instancia; con varias haría falta un
-  almacén compartido (p. ej. Redis).
+- **Los límites de la demo viven en memoria** (cupo por IP, caché y presupuesto diario): valen para
+  una instancia y se reinician si el servidor se reinicia; con varias réplicas harían falta en un
+  almacén compartido (p. ej. Redis). Como red de seguridad final, la cuenta de la API no tiene
+  recarga automática.
 - Un modelo de lenguaje puede equivocarse al interpretar una pregunta ambigua: por eso la demo
   enseña siempre el SQL y los datos.
 

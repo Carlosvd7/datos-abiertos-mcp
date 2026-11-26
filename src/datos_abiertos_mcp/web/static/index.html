@@ -6,8 +6,8 @@
   <title>Habla con los datos públicos de España</title>
   <meta name="description" content="Pregunta en lenguaje natural sobre paro, población, inflación y precios de carburantes en España. Un agente de IA traduce tu pregunta a SQL sobre datos oficiales del INE y del Ministerio.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='1' y='9' width='3' height='6' rx='1' fill='%232a78d6'/%3E%3Crect x='6.5' y='5' width='3' height='10' rx='1' fill='%232a78d6'/%3E%3Crect x='12' y='1' width='3' height='14' rx='1' fill='%232a78d6'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="/static/estilos.css">
-  <script src="/static/app.js" defer></script>
+  <link rel="stylesheet" href="/static/estilos.css?v=2">
+  <script src="/static/app.js?v=2" defer></script>
 </head>
 <body>
   <header class="cabecera">
@@ -74,7 +74,8 @@
       <p>Datos disponibles:</p>
       <ul id="tablas" class="tablas"></ul>
       <p class="ayuda">
-        Límite de uso: unas pocas preguntas por hora para cada visitante. Las respuestas las genera un modelo de IA:
+        Para mantener la demo gratuita, cada visitante puede hacer una pregunta propia al día; las preguntas de
+        ejemplo se pueden consultar siempre. Las respuestas las genera un modelo de IA (Claude Haiku 5.5):
         revisa la consulta y la fuente antes de usar una cifra.
       </p>
     </section>

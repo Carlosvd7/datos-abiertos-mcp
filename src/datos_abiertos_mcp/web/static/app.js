@@ -306,7 +306,10 @@ function estado(texto, { error = false, cargando = false } = {}) {
 }
 
 function restantes(r) {
-  if (r) $("contador").textContent = `Te quedan ${r.hora} preguntas esta hora`;
+  if (!r) return;
+  $("contador").textContent = r.dia > 0
+    ? `Te ${r.dia === 1 ? "queda 1 pregunta propia" : `quedan ${r.dia} preguntas propias`} hoy · las de ejemplo son gratis`
+    : "Ya has hecho tu pregunta de hoy · las de ejemplo siguen disponibles";
 }
 
 async function preguntar(texto) {
@@ -324,6 +327,7 @@ async function preguntar(texto) {
     if (!resp.ok) {
       const detalle = typeof datos.detail === "string" ? datos.detail : "La pregunta debe tener entre 3 y 300 caracteres.";
       estado(detalle, { error: true });
+      if (resp.status === 429) restantes({ dia: 0, hora: 0 });
       return;
     }
     estado("");
@@ -345,7 +349,8 @@ async function preguntar(texto) {
         : [el("li", { texto: "Sin fuentes: la respuesta no usó datos." })]),
     );
     const llamadas = datos.pasos.length;
-    $("metadatos").textContent = `${llamadas} llamada${llamadas === 1 ? "" : "s"} a herramientas MCP · ${numero.format(datos.segundos)} s`;
+    $("metadatos").textContent = `${llamadas} llamada${llamadas === 1 ? "" : "s"} a herramientas MCP · ${numero.format(datos.segundos)} s`
+      + (datos.de_cache ? " · respuesta guardada, sin coste" : "");
     restantes(datos.restantes);
     $("resultado").hidden = false;
   } catch {

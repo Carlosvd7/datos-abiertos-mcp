@@ -1,7 +1,13 @@
 """Demo web: una página para preguntar y una API que ejecuta el agente en el servidor.
 
 La clave de la API de Claude solo existe en el servidor (variable de entorno). El navegador
-habla con /api/preguntar, que aplica límites de uso por IP y un tope diario global.
+habla con /api/preguntar, que protege el saldo con varias capas:
+
+- 1 pregunta propia por visitante (IP) y día; las respuestas ya calculadas (como las de las
+  preguntas de ejemplo) se sirven desde caché, sin coste y sin gastar el cupo.
+- Presupuesto diario en dólares, calculado con los tokens reales de cada respuesta: al
+  superarlo, la demo se pausa hasta el día siguiente (UTC), aunque alguien cambie de IP.
+- Tope global de preguntas al día y peor caso por pregunta acotado (pasos y longitud).
 
 Uso local:
     uv run demo            # http://127.0.0.1:8000
@@ -13,9 +19,11 @@ import argparse
 import asyncio
 import logging
 import os
+import re
 import time
-from collections import defaultdict, deque
+from collections import OrderedDict, defaultdict, deque
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -75,8 +83,12 @@ class LimitadorDeUso:
         if len(self._total) >= self.por_dia_total:
             return "La demo ha alcanzado el máximo de preguntas de hoy. Vuelve mañana."
         if len(cola) >= self.por_dia_ip:
+            if self.por_dia_ip == 1:
+                return "Ya has hecho tu pregunta de hoy."
             return f"Has alcanzado el máximo de {self.por_dia_ip} preguntas por día."
         if ultima_hora >= self.por_hora_ip:
+            if self.por_hora_ip == 1:
+                return "Ya has hecho tu pregunta de esta hora."
             return f"Has alcanzado el máximo de {self.por_hora_ip} preguntas por hora."
         cola.append(ahora)
         self._total.append(ahora)
@@ -88,6 +100,59 @@ class LimitadorDeUso:
         hora = sum(1 for t in cola if t > ahora - 3600)
         dia = sum(1 for t in cola if t > ahora - 86400)
         return {"hora": max(0, self.por_hora_ip - hora), "dia": max(0, self.por_dia_ip - dia)}
+
+
+class PresupuestoDiario:
+    """Suma el coste real (USD) de las respuestas del día UTC y avisa al superar el límite."""
+
+    def __init__(self, limite_usd: float):
+        self.limite_usd = limite_usd
+        self._dia = ""
+        self.gastado = 0.0
+
+    def _al_dia(self, hoy: str | None = None) -> None:
+        hoy = hoy or datetime.now(UTC).date().isoformat()
+        if hoy != self._dia:
+            self._dia, self.gastado = hoy, 0.0
+
+    def agotado(self, hoy: str | None = None) -> bool:
+        self._al_dia(hoy)
+        return self.gastado >= self.limite_usd
+
+    def registrar(self, coste_usd: float, hoy: str | None = None) -> None:
+        self._al_dia(hoy)
+        self.gastado += coste_usd
+
+
+class CacheRespuestas:
+    """Respuestas ya calculadas, por pregunta normalizada (los datos no cambian hasta redesplegar)."""
+
+    def __init__(self, maximo: int = 300):
+        self.maximo = maximo
+        self._datos: OrderedDict[str, dict[str, Any]] = OrderedDict()
+
+    @staticmethod
+    def clave(pregunta: str) -> str:
+        return re.sub(r"[\s¿?¡!.,;:]+", " ", pregunta.lower()).strip()
+
+    def obtener(self, pregunta: str) -> dict[str, Any] | None:
+        clave = self.clave(pregunta)
+        if clave in self._datos:
+            self._datos.move_to_end(clave)
+            return self._datos[clave]
+        return None
+
+    def guardar(self, pregunta: str, respuesta: dict[str, Any]) -> None:
+        self._datos[self.clave(pregunta)] = respuesta
+        while len(self._datos) > self.maximo:
+            self._datos.popitem(last=False)
+
+
+def _decimal(nombre: str, defecto: float) -> float:
+    try:
+        return float(os.environ.get(nombre, defecto))
+    except ValueError:
+        return defecto
 
 
 class Pregunta(BaseModel):
@@ -105,10 +170,13 @@ def _ip_cliente(request: Request) -> str:
 def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | None = None) -> FastAPI:
     """Crea la app. En tests se pueden inyectar el cliente MCP y el agente."""
     limitador = LimitadorDeUso(
-        _entero("DEMO_PREGUNTAS_POR_HORA_IP", 5),
-        _entero("DEMO_PREGUNTAS_POR_DIA_IP", 20),
+        _entero("DEMO_PREGUNTAS_POR_HORA_IP", 1),
+        _entero("DEMO_PREGUNTAS_POR_DIA_IP", 1),
         _entero("DEMO_PREGUNTAS_POR_DIA_TOTAL", 50),
     )
+    presupuesto = PresupuestoDiario(_decimal("DEMO_PRESUPUESTO_DIA_USD", 0.15))
+    cache = CacheRespuestas()
+    claves_ejemplos = {CacheRespuestas.clave(e) for e in EJEMPLOS}
     concurrencia = asyncio.Semaphore(_entero("DEMO_CONCURRENCIA", 3))
     estado: dict[str, Any] = {}
 
@@ -123,7 +191,12 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
             return
         # Un único servidor MCP (subproceso stdio) para toda la demo, igual que en la CLI.
         async with cliente_mcp or Client(agente.parametros_servidor_stdio()) as mcp:
-            estado["agente"] = agente.Agente(mcp)
+            # En la demo, peor caso acotado: menos pasos y respuestas más cortas.
+            estado["agente"] = agente.Agente(
+                mcp,
+                max_pasos=_entero("DEMO_MAX_PASOS", 6),
+                max_tokens=_entero("DEMO_MAX_TOKENS", 4000),
+            )
             await estado["agente"].herramientas()
             yield
 
@@ -142,7 +215,8 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
 
     @app.get("/")
     async def inicio() -> FileResponse:
-        return FileResponse(ESTATICOS / "index.html")
+        # Sin caché: así los cambios de app.js/estilos.css (versionados con ?v=) llegan siempre.
+        return FileResponse(ESTATICOS / "index.html", headers={"Cache-Control": "no-cache"})
 
     @app.get("/api/info")
     async def info(request: Request) -> dict[str, Any]:
@@ -160,12 +234,26 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
     @app.post("/api/preguntar")
     async def preguntar(cuerpo: Pregunta, request: Request) -> JSONResponse:
         ip = _ip_cliente(request)
-        motivo = limitador.comprobar(ip)
+        pregunta = cuerpo.pregunta.strip()
+        guardada = cache.obtener(pregunta)
+        if guardada is not None:  # sin coste: no cuenta para el cupo ni el presupuesto
+            return JSONResponse({**guardada, "de_cache": True, "restantes": limitador.restantes(ip)})
+        if presupuesto.agotado():
+            raise HTTPException(
+                status_code=503,
+                detail="La demo ha agotado su presupuesto de hoy. Prueba las preguntas de ejemplo "
+                "o vuelve mañana.",
+            )
+        # Los ejemplos no gastan el cupo del visitante: se calculan una vez y quedan en caché.
+        es_ejemplo = cache.clave(pregunta) in claves_ejemplos
+        motivo = None if es_ejemplo else limitador.comprobar(ip)
         if motivo:
-            raise HTTPException(status_code=429, detail=motivo)
+            raise HTTPException(
+                status_code=429, detail=f"{motivo} Puedes seguir probando las preguntas de ejemplo."
+            )
         async with concurrencia:  # como mucho N preguntas a la vez; el resto espera turno
             try:
-                r = await asyncio.wait_for(estado["agente"].preguntar(cuerpo.pregunta.strip()), 120)
+                r = await asyncio.wait_for(estado["agente"].preguntar(pregunta), 120)
             except TimeoutError as exc:
                 raise HTTPException(status_code=504, detail="La respuesta ha tardado demasiado.") from exc
             except Exception as exc:  # errores de la API de Claude, red...
@@ -173,24 +261,31 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
                 raise HTTPException(
                     status_code=502, detail="No se ha podido consultar el modelo. Inténtalo más tarde."
                 ) from exc
-        return JSONResponse(
-            {
-                "respuesta": r.respuesta,
-                "sql": r.sql,
-                "fuentes": r.fuentes,
-                "grafica": r.grafica,
-                "tabla": r.resultado_final
-                and {
-                    "columnas": r.resultado_final["columnas"],
-                    "filas": r.resultado_final["filas"][:50],
-                    "truncado": r.resultado_final["truncado"] or len(r.resultado_final["filas"]) > 50,
-                },
-                "pasos": [{"herramienta": p.herramienta, "ok": p.ok} for p in r.pasos],
-                "segundos": r.segundos,
-                "estado": r.estado,
-                "restantes": limitador.restantes(ip),
-            }
+        presupuesto.registrar(r.coste_usd)
+        log.info(
+            "Pregunta respondida: %.5f USD (hoy %.4f / %.2f)",
+            r.coste_usd,
+            presupuesto.gastado,
+            presupuesto.limite_usd,
         )
+        datos = {
+            "respuesta": r.respuesta,
+            "sql": r.sql,
+            "fuentes": r.fuentes,
+            "grafica": r.grafica,
+            "tabla": r.resultado_final
+            and {
+                "columnas": r.resultado_final["columnas"],
+                "filas": r.resultado_final["filas"][:50],
+                "truncado": r.resultado_final["truncado"] or len(r.resultado_final["filas"]) > 50,
+            },
+            "pasos": [{"herramienta": p.herramienta, "ok": p.ok} for p in r.pasos],
+            "segundos": r.segundos,
+            "estado": r.estado,
+        }
+        if r.estado == "ok":
+            cache.guardar(pregunta, datos)
+        return JSONResponse({**datos, "de_cache": False, "restantes": limitador.restantes(ip)})
 
     app.mount("/static", StaticFiles(directory=ESTATICOS), name="static")
     return app
@@ -203,6 +298,7 @@ def main() -> None:
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     args = parser.parse_args()
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
     uvicorn.run(crear_app(), host=args.host, port=args.port, proxy_headers=False)
 
 

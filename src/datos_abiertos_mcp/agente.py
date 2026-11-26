@@ -28,6 +28,31 @@ MODELO = os.environ.get("CLAUDE_MODELO", "claude-haiku-5-5")
 ESFUERZO = os.environ.get("CLAUDE_ESFUERZO", "medium")
 MAX_PASOS = 10
 VERSION_PROMPT = "v2"  # v1: sin la regla de «cálculos en SQL»; ver README (evaluación)
+
+# Precios públicos por millón de tokens (USD): entrada, salida, lectura de caché, escritura de caché.
+PRECIOS = {
+    "claude-opus-5-5": (4.00, 20.00, 0.20, 5.00),
+    "claude-sonnet-5-5": (2.00, 10.00, 0.10, 2.50),
+    # Haiku 5.5: precio publicado hasta 100K tokens de prompt; caché estimada a 0,1x / 1,25x.
+    "claude-haiku-5-5": (0.10, 0.50, 0.01, 0.125),
+}
+
+
+def coste_usd(modelo: str, r: dict) -> float:
+    """Coste en USD a partir de los tokens reales que devuelve la API.
+
+    Para un modelo sin precio conocido se usa el más caro de la tabla (estimación prudente).
+    """
+    precio = PRECIOS.get(modelo) or max(PRECIOS.values())
+    sin_cache = r["tokens_entrada"] - r["tokens_cache_lectura"] - r["tokens_cache_escritura"]
+    return (
+        sin_cache * precio[0]
+        + r["tokens_salida"] * precio[1]
+        + r["tokens_cache_lectura"] * precio[2]
+        + r["tokens_cache_escritura"] * precio[3]
+    ) / 1e6
+
+
 BETAS = ["server-side-fallback-2026-07-01"]
 # Modelos con reintento automático en otro modelo si rechazan la petición (Haiku no lo tiene).
 CON_FALLBACK = ("claude-opus-5", "claude-sonnet-5-5", "claude-fable-5")
@@ -96,6 +121,7 @@ class Respuesta:
     modelos_servidos: list[str] = field(default_factory=list)  # por si actúa el fallback
     llamadas_modelo: int = 0
     estado: str = "ok"  # ok | rechazo | truncado | max_pasos
+    coste_usd: float = 0.0
 
     def como_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -121,10 +147,20 @@ def _contenido_resultado(resultado: Any) -> tuple[bool, Any, str]:
 
 
 class Agente:
-    def __init__(self, mcp: Client, *, cliente: AsyncAnthropic | None = None, modelo: str = MODELO):
+    def __init__(
+        self,
+        mcp: Client,
+        *,
+        cliente: AsyncAnthropic | None = None,
+        modelo: str = MODELO,
+        max_pasos: int | None = None,
+        max_tokens: int = 16000,
+    ):
         self.mcp = mcp
         self.cliente = cliente or AsyncAnthropic()
         self.modelo = modelo
+        self.max_pasos = max_pasos  # None = MAX_PASOS; la demo usa menos para acotar el gasto
+        self.max_tokens = max_tokens
         self._herramientas: list[dict[str, Any]] | None = None
 
     async def herramientas(self) -> list[dict[str, Any]]:
@@ -139,10 +175,10 @@ class Agente:
         herramientas = await self.herramientas()
         fuentes: dict[str, dict[str, Any]] = {}
 
-        for _ in range(MAX_PASOS):
+        for _ in range(self.max_pasos or MAX_PASOS):
             mensaje = await self.cliente.beta.messages.create(
                 model=self.modelo,
-                max_tokens=16000,
+                max_tokens=self.max_tokens,
                 system=SISTEMA,
                 tools=herramientas,
                 messages=mensajes,
@@ -202,6 +238,7 @@ class Agente:
 
         r.fuentes = list(fuentes.values())
         r.segundos = round(time.perf_counter() - inicio, 2)
+        r.coste_usd = round(coste_usd(self.modelo, asdict(r)), 6)
         return r
 
 
