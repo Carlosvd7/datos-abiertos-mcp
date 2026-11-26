@@ -1,0 +1,1005 @@
+{
+ "¿Cuál es la tasa de paro en España según el último dato de la EPA?": {
+  "respuesta": "La tasa de paro en España según el último dato de la EPA es del **10,18 %** en el tercer trimestre de 2026 (2026T3), la cifra más reciente disponible en los datos.\n\nPara contexto, en el trimestre anterior (2026T2) fue del 9,87 % y en el primero de 2026 (2026T1) del 10,83 %.\n\nFuente: Instituto Nacional de Estadística (INE), Encuesta de Población Activa (EPA), tabla 65334, datos hasta 2026T3.",
+  "sql": [
+   "SELECT periodo, tasa_paro FROM paro_epa WHERE codigo_ccaa='00' AND sexo='Total' AND grupo_edad='Total' ORDER BY fecha_inicio DESC LIMIT 4"
+  ],
+  "fuentes": [
+   {
+    "tabla": "paro_epa",
+    "organismo": "Instituto Nacional de Estadística (INE)",
+    "conjunto": "Encuesta de Población Activa (EPA). Tabla 65334: tasas de paro por distintos grupos de edad, sexo y comunidad autónoma",
+    "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=65334",
+    "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+    "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+    "datos_hasta": "2026T3"
+   }
+  ],
+  "grafica": null,
+  "tabla": {
+   "columnas": [
+    "periodo",
+    "tasa_paro"
+   ],
+   "filas": [
+    [
+     "2026T3",
+     10.18
+    ],
+    [
+     "2026T2",
+     9.87
+    ],
+    [
+     "2026T1",
+     10.83
+    ],
+    [
+     "2025T4",
+     9.93
+    ]
+   ],
+   "truncado": false
+  },
+  "pasos": [
+   {
+    "herramienta": "listar_tablas",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   }
+  ],
+  "segundos": 3.7,
+  "estado": "ok"
+ },
+ "¿Qué comunidades tienen más paro? Muéstramelo en una gráfica.": {
+  "respuesta": "Las que tienen la tasa de paro más alta en el último dato disponible (2026T3, tercer trimestre de 2026) son Melilla (18,87 %) y Ceuta (18,50 %), seguidas de Andalucía (14,91 %) y Extremadura (13,01 %). Melilla y Ceuta son ciudades autónomas. La media nacional es del 10,18 %. Las cinco con menor paro son Baleares (4,63 %), País Vasco (7,17 %), Cantabria (7,56 %), Castilla y León (7,75 %) y Madrid (8,18 %).\n\nHe generado la gráfica de barras con las 19 comunidades y ciudades autónomas ordenadas de mayor a menor tasa.\n\nFuente: Instituto Nacional de Estadística (INE), Encuesta de Población Activa (EPA), tabla 65334, datos hasta 2026T3 (total, ambos sexos y todos los grupos de edad).",
+  "sql": [
+   "SELECT c.nombre, p.periodo, p.tasa_paro FROM paro_epa p JOIN comunidades c ON c.codigo_ccaa = p.codigo_ccaa WHERE p.periodo = (SELECT MAX(periodo) FROM paro_epa) AND p.sexo = 'Total' AND p.grupo_edad = 'Total' AND p.codigo_ccaa <> '00' ORDER BY p.tasa_paro DESC",
+   "SELECT c.nombre, p.tasa_paro FROM paro_epa p JOIN comunidades c ON c.codigo_ccaa = p.codigo_ccaa WHERE p.periodo = (SELECT MAX(periodo) FROM paro_epa) AND p.sexo = 'Total' AND p.grupo_edad = 'Total' AND p.codigo_ccaa = '00'",
+   "SELECT c.nombre, p.tasa_paro FROM paro_epa p JOIN comunidades c ON c.codigo_ccaa = p.codigo_ccaa WHERE p.periodo = (SELECT MAX(periodo) FROM paro_epa) AND p.sexo = 'Total' AND p.grupo_edad = 'Total' AND p.codigo_ccaa <> '00' ORDER BY p.tasa_paro DESC"
+  ],
+  "fuentes": [
+   {
+    "tabla": "paro_epa",
+    "organismo": "Instituto Nacional de Estadística (INE)",
+    "conjunto": "Encuesta de Población Activa (EPA). Tabla 65334: tasas de paro por distintos grupos de edad, sexo y comunidad autónoma",
+    "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=65334",
+    "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+    "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+    "datos_hasta": "2026T3"
+   }
+  ],
+  "grafica": {
+   "tipo": "barras",
+   "titulo": "Tasa de paro por comunidad, 2026T3 (%)",
+   "eje_x": "nombre",
+   "etiquetas": [
+    "Melilla",
+    "Ceuta",
+    "Andalucía",
+    "Extremadura",
+    "Comunidad Valenciana",
+    "Castilla-La Mancha",
+    "Canarias",
+    "Región de Murcia",
+    "Asturias",
+    "Aragón",
+    "Galicia",
+    "Navarra",
+    "La Rioja",
+    "Cataluña",
+    "Comunidad de Madrid",
+    "Castilla y León",
+    "Cantabria",
+    "País Vasco",
+    "Islas Baleares"
+   ],
+   "series": [
+    {
+     "nombre": "tasa_paro",
+     "valores": [
+      18.87,
+      18.5,
+      14.91,
+      13.01,
+      11.82,
+      11.36,
+      10.92,
+      10.8,
+      10.04,
+      9.23,
+      9.17,
+      9.16,
+      8.63,
+      8.3,
+      8.18,
+      7.75,
+      7.56,
+      7.17,
+      4.63
+     ]
+    }
+   ],
+   "truncado": false,
+   "sql": "SELECT c.nombre, p.tasa_paro FROM paro_epa p JOIN comunidades c ON c.codigo_ccaa = p.codigo_ccaa WHERE p.periodo = (SELECT MAX(periodo) FROM paro_epa) AND p.sexo = 'Total' AND p.grupo_edad = 'Total' AND p.codigo_ccaa <> '00' ORDER BY p.tasa_paro DESC",
+   "fuentes": [
+    {
+     "tabla": "paro_epa",
+     "organismo": "Instituto Nacional de Estadística (INE)",
+     "conjunto": "Encuesta de Población Activa (EPA). Tabla 65334: tasas de paro por distintos grupos de edad, sexo y comunidad autónoma",
+     "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=65334",
+     "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+     "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+     "datos_hasta": "2026T3"
+    }
+   ]
+  },
+  "tabla": {
+   "columnas": [
+    "nombre",
+    "tasa_paro"
+   ],
+   "filas": [
+    [
+     "España",
+     10.18
+    ]
+   ],
+   "truncado": false
+  },
+  "pasos": [
+   {
+    "herramienta": "listar_tablas",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "datos_grafica",
+    "ok": true
+   }
+  ],
+  "segundos": 7.57,
+  "estado": "ok"
+ },
+ "¿Cómo ha evolucionado la inflación en España desde 2020?": {
+  "respuesta": "La inflación pasó de negativa en 2020 a un pico en 2022 y se ha moderado después, aunque vuelve a subir en 2026. La tasa interanual de octubre de 2026 (último dato) es del 4,9 %, la más alta desde 2023. En 2020 hubo deflación (diciembre: −0,5 %). En 2021 la inflación subió hasta el 6,5 % en diciembre y en 2022 llegó al 10,8 % en julio, su máximo del periodo.\n\nResumen anual (España, sin desagregar por comunidad):\n\n| Año | Media de la tasa interanual mensual | Tasa interanual de diciembre |\n|---|---|---|\n| 2020 | −0,31 % | −0,5 % |\n| 2021 | 3,08 % | 6,5 % |\n| 2022 | 8,39 % | 5,7 % |\n| 2023 | 3,55 % | 3,1 % |\n| 2024 | 2,77 % | 2,8 % |\n| 2025 | 2,68 % | 2,9 % |\n| 2026 (ene–oct) | 3,53 % | — |\n\nLa media anual es una aproximación, porque promedia tasas interanuales mensuales y no reconstruye el índice anual. En 2026 el dato de diciembre aún no existe.\n\nFuente: Instituto Nacional de Estadística (INE), Tabla 76140 (IPC, tasa de variación del índice general), datos de enero de 2020 a octubre de 2026.",
+  "sql": [
+   "WITH n AS (SELECT * FROM ipc WHERE codigo_ccaa='00' AND anio>=2020)\nSELECT anio,\n  ROUND(AVG(variacion_anual),2) AS media_anual_interanual,\n  MAX(CASE WHEN mes=12 THEN variacion_anual END) AS dic_interanual,\n  MAX(CASE WHEN mes=12 THEN variacion_acumulada END) AS variacion_anual_acumulada_dic,\n  COUNT(*) AS meses\nFROM n GROUP BY anio ORDER BY anio",
+   "SELECT anio, mes, variacion_anual FROM ipc WHERE codigo_ccaa='00' AND anio>=2020 ORDER BY fecha",
+   "SELECT fecha AS mes_periodo, variacion_anual AS inflacion_interanual FROM ipc WHERE codigo_ccaa='00' AND anio>=2020 ORDER BY fecha"
+  ],
+  "fuentes": [
+   {
+    "tabla": "ipc",
+    "organismo": "Instituto Nacional de Estadística (INE)",
+    "conjunto": "Índice de Precios de Consumo (IPC). Tabla 76140: tasa de variación del índice general por comunidades autónomas",
+    "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=76140",
+    "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+    "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+    "datos_hasta": "2026-10"
+   }
+  ],
+  "grafica": {
+   "tipo": "lineas",
+   "titulo": "IPC España: inflación interanual mensual (%) desde 2020",
+   "eje_x": "mes_periodo",
+   "etiquetas": [
+    "2020-01-01",
+    "2020-02-01",
+    "2020-03-01",
+    "2020-04-01",
+    "2020-05-01",
+    "2020-06-01",
+    "2020-07-01",
+    "2020-08-01",
+    "2020-09-01",
+    "2020-10-01",
+    "2020-11-01",
+    "2020-12-01",
+    "2021-01-01",
+    "2021-02-01",
+    "2021-03-01",
+    "2021-04-01",
+    "2021-05-01",
+    "2021-06-01",
+    "2021-07-01",
+    "2021-08-01",
+    "2021-09-01",
+    "2021-10-01",
+    "2021-11-01",
+    "2021-12-01",
+    "2022-01-01",
+    "2022-02-01",
+    "2022-03-01",
+    "2022-04-01",
+    "2022-05-01",
+    "2022-06-01",
+    "2022-07-01",
+    "2022-08-01",
+    "2022-09-01",
+    "2022-10-01",
+    "2022-11-01",
+    "2022-12-01",
+    "2023-01-01",
+    "2023-02-01",
+    "2023-03-01",
+    "2023-04-01",
+    "2023-05-01",
+    "2023-06-01",
+    "2023-07-01",
+    "2023-08-01",
+    "2023-09-01",
+    "2023-10-01",
+    "2023-11-01",
+    "2023-12-01",
+    "2024-01-01",
+    "2024-02-01",
+    "2024-03-01",
+    "2024-04-01",
+    "2024-05-01",
+    "2024-06-01",
+    "2024-07-01",
+    "2024-08-01",
+    "2024-09-01",
+    "2024-10-01",
+    "2024-11-01",
+    "2024-12-01",
+    "2025-01-01",
+    "2025-02-01",
+    "2025-03-01",
+    "2025-04-01",
+    "2025-05-01",
+    "2025-06-01",
+    "2025-07-01",
+    "2025-08-01",
+    "2025-09-01",
+    "2025-10-01",
+    "2025-11-01",
+    "2025-12-01",
+    "2026-01-01",
+    "2026-02-01",
+    "2026-03-01",
+    "2026-04-01",
+    "2026-05-01",
+    "2026-06-01",
+    "2026-07-01",
+    "2026-08-01",
+    "2026-09-01",
+    "2026-10-01"
+   ],
+   "series": [
+    {
+     "nombre": "inflacion_interanual",
+     "valores": [
+      1.1,
+      0.7,
+      0.0,
+      -0.7,
+      -0.9,
+      -0.3,
+      -0.6,
+      -0.5,
+      -0.4,
+      -0.8,
+      -0.8,
+      -0.5,
+      0.5,
+      0.0,
+      1.3,
+      2.2,
+      2.7,
+      2.7,
+      2.9,
+      3.3,
+      4.0,
+      5.4,
+      5.5,
+      6.5,
+      6.1,
+      7.6,
+      9.8,
+      8.3,
+      8.7,
+      10.2,
+      10.8,
+      10.5,
+      8.9,
+      7.3,
+      6.8,
+      5.7,
+      5.9,
+      6.0,
+      3.3,
+      4.1,
+      3.2,
+      1.9,
+      2.3,
+      2.6,
+      3.5,
+      3.5,
+      3.2,
+      3.1,
+      3.4,
+      2.8,
+      3.2,
+      3.3,
+      3.6,
+      3.4,
+      2.8,
+      2.3,
+      1.5,
+      1.8,
+      2.4,
+      2.8,
+      2.9,
+      3.0,
+      2.3,
+      2.2,
+      2.0,
+      2.3,
+      2.7,
+      2.7,
+      3.0,
+      3.1,
+      3.0,
+      2.9,
+      2.3,
+      2.3,
+      3.4,
+      3.2,
+      3.2,
+      3.2,
+      3.6,
+      4.3,
+      4.9,
+      4.9
+     ]
+    }
+   ],
+   "truncado": false,
+   "sql": "SELECT fecha AS mes_periodo, variacion_anual AS inflacion_interanual FROM ipc WHERE codigo_ccaa='00' AND anio>=2020 ORDER BY fecha",
+   "fuentes": [
+    {
+     "tabla": "ipc",
+     "organismo": "Instituto Nacional de Estadística (INE)",
+     "conjunto": "Índice de Precios de Consumo (IPC). Tabla 76140: tasa de variación del índice general por comunidades autónomas",
+     "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=76140",
+     "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+     "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+     "datos_hasta": "2026-10"
+    }
+   ]
+  },
+  "tabla": {
+   "columnas": [
+    "anio",
+    "mes",
+    "variacion_anual"
+   ],
+   "filas": [
+    [
+     2020,
+     1,
+     1.1
+    ],
+    [
+     2020,
+     2,
+     0.7
+    ],
+    [
+     2020,
+     3,
+     0.0
+    ],
+    [
+     2020,
+     4,
+     -0.7
+    ],
+    [
+     2020,
+     5,
+     -0.9
+    ],
+    [
+     2020,
+     6,
+     -0.3
+    ],
+    [
+     2020,
+     7,
+     -0.6
+    ],
+    [
+     2020,
+     8,
+     -0.5
+    ],
+    [
+     2020,
+     9,
+     -0.4
+    ],
+    [
+     2020,
+     10,
+     -0.8
+    ],
+    [
+     2020,
+     11,
+     -0.8
+    ],
+    [
+     2020,
+     12,
+     -0.5
+    ],
+    [
+     2021,
+     1,
+     0.5
+    ],
+    [
+     2021,
+     2,
+     0.0
+    ],
+    [
+     2021,
+     3,
+     1.3
+    ],
+    [
+     2021,
+     4,
+     2.2
+    ],
+    [
+     2021,
+     5,
+     2.7
+    ],
+    [
+     2021,
+     6,
+     2.7
+    ],
+    [
+     2021,
+     7,
+     2.9
+    ],
+    [
+     2021,
+     8,
+     3.3
+    ],
+    [
+     2021,
+     9,
+     4.0
+    ],
+    [
+     2021,
+     10,
+     5.4
+    ],
+    [
+     2021,
+     11,
+     5.5
+    ],
+    [
+     2021,
+     12,
+     6.5
+    ],
+    [
+     2022,
+     1,
+     6.1
+    ],
+    [
+     2022,
+     2,
+     7.6
+    ],
+    [
+     2022,
+     3,
+     9.8
+    ],
+    [
+     2022,
+     4,
+     8.3
+    ],
+    [
+     2022,
+     5,
+     8.7
+    ],
+    [
+     2022,
+     6,
+     10.2
+    ],
+    [
+     2022,
+     7,
+     10.8
+    ],
+    [
+     2022,
+     8,
+     10.5
+    ],
+    [
+     2022,
+     9,
+     8.9
+    ],
+    [
+     2022,
+     10,
+     7.3
+    ],
+    [
+     2022,
+     11,
+     6.8
+    ],
+    [
+     2022,
+     12,
+     5.7
+    ],
+    [
+     2023,
+     1,
+     5.9
+    ],
+    [
+     2023,
+     2,
+     6.0
+    ],
+    [
+     2023,
+     3,
+     3.3
+    ],
+    [
+     2023,
+     4,
+     4.1
+    ],
+    [
+     2023,
+     5,
+     3.2
+    ],
+    [
+     2023,
+     6,
+     1.9
+    ],
+    [
+     2023,
+     7,
+     2.3
+    ],
+    [
+     2023,
+     8,
+     2.6
+    ],
+    [
+     2023,
+     9,
+     3.5
+    ],
+    [
+     2023,
+     10,
+     3.5
+    ],
+    [
+     2023,
+     11,
+     3.2
+    ],
+    [
+     2023,
+     12,
+     3.1
+    ],
+    [
+     2024,
+     1,
+     3.4
+    ],
+    [
+     2024,
+     2,
+     2.8
+    ]
+   ],
+   "truncado": true
+  },
+  "pasos": [
+   {
+    "herramienta": "listar_tablas",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "datos_grafica",
+    "ok": true
+   }
+  ],
+  "segundos": 9.7,
+  "estado": "ok"
+ },
+ "¿En qué comunidad es más barata la gasolina 95 esta semana?": {
+  "respuesta": "La comunidad más barata para la gasolina 95 es **Canarias**, con un precio medio de **1,483 €/litro**. Es la última semana disponible, la del lunes 23/11/2026. La media nacional está en 1,539 €/litro.\n\nEn el otro extremo, Islas Baleares es la más cara, con 1,641 €/litro.\n\n| Comunidad | Precio medio (€/l) |\n|---|---|\n| Canarias | 1,483 |\n| Navarra | 1,503 |\n| Cataluña | 1,505 |\n| Ceuta | 1,514 |\n| Aragón | 1,521 |\n| La Rioja | 1,523 |\n| Región de Murcia | 1,528 |\n| Galicia | 1,539 |\n| Castilla y León | 1,543 |\n| Comunidad Valenciana | 1,543 |\n\nFuente: Ministerio para la Transición Ecológica y el Reto Demográfico, Geoportal de gasolineras (datos semanales al 23/11/2026).",
+  "sql": [
+   "SELECT c.nombre, s.fecha, s.precio_medio, s.precio_mediano, s.precio_min, s.n_estaciones FROM carburantes_semanal s JOIN comunidades c ON c.codigo_ccaa = s.codigo_ccaa WHERE s.carburante = 'gasolina_95' AND s.fecha = (SELECT MAX(fecha) FROM carburantes_semanal) AND s.codigo_ccaa <> '00' ORDER BY s.precio_medio ASC",
+   "SELECT s.precio_medio FROM carburantes_semanal s WHERE s.carburante = 'gasolina_95' AND s.codigo_ccaa = '00' AND s.fecha = (SELECT MAX(fecha) FROM carburantes_semanal)",
+   "SELECT c.nombre, s.precio_medio FROM carburantes_semanal s JOIN comunidades c ON c.codigo_ccaa = s.codigo_ccaa WHERE s.carburante = 'gasolina_95' AND s.fecha = (SELECT MAX(fecha) FROM carburantes_semanal) AND s.codigo_ccaa <> '00' ORDER BY s.precio_medio ASC"
+  ],
+  "fuentes": [
+   {
+    "tabla": "carburantes_semanal",
+    "organismo": "Ministerio para la Transición Ecológica y el Reto Demográfico",
+    "conjunto": "Precios de carburantes en las estaciones de servicio (Geoportal de gasolineras)",
+    "url": "https://geoportalgasolineras.es/",
+    "licencia": "Información del sector público reutilizable según la Ley 37/2007 (citar la fuente y la fecha de actualización, sin alterar los datos)",
+    "cita": "Fuente: Ministerio para la Transición Ecológica y el Reto Demográfico, Geoportal de gasolineras",
+    "datos_hasta": "2026-11-23"
+   }
+  ],
+  "grafica": {
+   "tipo": "barras",
+   "titulo": "Precio medio gasolina 95 por comunidad (€/litro), semana del 23/11/2026",
+   "eje_x": "nombre",
+   "etiquetas": [
+    "Canarias",
+    "Navarra",
+    "Cataluña",
+    "Ceuta",
+    "Aragón",
+    "La Rioja",
+    "Región de Murcia",
+    "Galicia",
+    "Castilla y León",
+    "Comunidad Valenciana",
+    "Castilla-La Mancha",
+    "Comunidad de Madrid",
+    "Andalucía",
+    "País Vasco",
+    "Extremadura",
+    "Cantabria",
+    "Melilla",
+    "Asturias",
+    "Islas Baleares"
+   ],
+   "series": [
+    {
+     "nombre": "precio_medio",
+     "valores": [
+      1.483,
+      1.503,
+      1.505,
+      1.514,
+      1.521,
+      1.523,
+      1.528,
+      1.539,
+      1.543,
+      1.543,
+      1.548,
+      1.548,
+      1.55,
+      1.555,
+      1.559,
+      1.563,
+      1.602,
+      1.608,
+      1.641
+     ]
+    }
+   ],
+   "truncado": false,
+   "sql": "SELECT c.nombre, s.precio_medio FROM carburantes_semanal s JOIN comunidades c ON c.codigo_ccaa = s.codigo_ccaa WHERE s.carburante = 'gasolina_95' AND s.fecha = (SELECT MAX(fecha) FROM carburantes_semanal) AND s.codigo_ccaa <> '00' ORDER BY s.precio_medio ASC",
+   "fuentes": [
+    {
+     "tabla": "carburantes_semanal",
+     "organismo": "Ministerio para la Transición Ecológica y el Reto Demográfico",
+     "conjunto": "Precios de carburantes en las estaciones de servicio (Geoportal de gasolineras)",
+     "url": "https://geoportalgasolineras.es/",
+     "licencia": "Información del sector público reutilizable según la Ley 37/2007 (citar la fuente y la fecha de actualización, sin alterar los datos)",
+     "cita": "Fuente: Ministerio para la Transición Ecológica y el Reto Demográfico, Geoportal de gasolineras",
+     "datos_hasta": "2026-11-23"
+    }
+   ]
+  },
+  "tabla": {
+   "columnas": [
+    "precio_medio"
+   ],
+   "filas": [
+    [
+     1.539
+    ]
+   ],
+   "truncado": false
+  },
+  "pasos": [
+   {
+    "herramienta": "listar_tablas",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "datos_grafica",
+    "ok": true
+   }
+  ],
+  "segundos": 7.16,
+  "estado": "ok"
+ },
+ "¿Qué porcentaje de la población de España tiene 65 años o más?": {
+  "respuesta": "El 21,04 % de la población de España tenía 65 años o más a 1 de enero de 2026: unas 10.438.474 personas de un total de 49.618.622 habitantes.\n\nFuente: INE, Estadística Continua de Población (tabla 56940), datos a 1 de enero de 2026.",
+  "sql": [
+   "SELECT p.anio, p.habitantes AS mayores_65, t.habitantes AS total, ROUND(100.0 * p.habitantes / t.habitantes, 2) AS porcentaje FROM poblacion p JOIN poblacion t ON t.anio = p.anio AND t.codigo_ccaa = p.codigo_ccaa AND t.sexo = 'Total' AND t.grupo_edad = 'Total' WHERE p.codigo_ccaa = '00' AND p.sexo = 'Total' AND p.grupo_edad = '65 y más' AND p.anio = (SELECT MAX(anio) FROM poblacion)"
+  ],
+  "fuentes": [
+   {
+    "tabla": "poblacion",
+    "organismo": "Instituto Nacional de Estadística (INE)",
+    "conjunto": "Estadística Continua de Población (ECP). Tabla 56940: población residente por fecha, sexo y edad (comunidades autónomas)",
+    "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=56940",
+    "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+    "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+    "datos_hasta": "1 de enero de 2026"
+   }
+  ],
+  "grafica": null,
+  "tabla": {
+   "columnas": [
+    "anio",
+    "mayores_65",
+    "total",
+    "porcentaje"
+   ],
+   "filas": [
+    [
+     2026,
+     10438474,
+     49618622,
+     21.04
+    ]
+   ],
+   "truncado": false
+  },
+  "pasos": [
+   {
+    "herramienta": "listar_tablas",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   }
+  ],
+  "segundos": 3.8,
+  "estado": "ok"
+ },
+ "¿Cuántas gasolineras hay por cada 100.000 habitantes en cada comunidad?": {
+  "respuesta": "En España hay 23,3 gasolineras por cada 100.000 habitantes (11.548 estaciones y 49,6 millones de habitantes). Castilla-La Mancha tiene la mayor densidad, con 42,9, y Melilla la menor, con 9,2. Las comunidades con más gasolineras por habitante son las de menor población y mayor extensión, mientras que Madrid (12,5) y Ceuta (11,9) están entre las más bajas.\n\n| Comunidad | Gasolineras | Por 100.000 hab. |\n|---|---|---|\n| Castilla-La Mancha | 926 | 42,9 |\n| Extremadura | 446 | 42,2 |\n| Navarra | 256 | 37,1 |\n| Castilla y León | 833 | 34,4 |\n| Aragón | 433 | 31,3 |\n| ... | ... | ... |\n| Comunidad de Madrid | 893 | 12,5 |\n| Ceuta | 10 | 11,9 |\n| Melilla | 8 | 9,2 |\n\nSe incluyen las 19 comunidades y ciudades autónomas en la gráfica. El recuento de gasolineras corresponde al 25/11/2026 y la población, al 1/1/2026.\n\nFuente: Ministerio para la Transición Ecológica y el Reto Demográfico, Geoportal de gasolineras (precios del 25/11/2026); INE, Estadística Continua de Población, tabla 56940 (población a 1/1/2026).",
+  "sql": [
+   "WITH pob AS (\n  SELECT codigo_ccaa, habitantes FROM poblacion\n  WHERE sexo='Total' AND grupo_edad='Total' AND anio = (SELECT MAX(anio) FROM poblacion)\n),\ngas AS (\n  SELECT codigo_ccaa, COUNT(*) AS gasolineras FROM gasolineras GROUP BY codigo_ccaa\n)\nSELECT c.nombre AS comunidad, g.gasolineras, p.habitantes,\n       ROUND(g.gasolineras * 100000.0 / p.habitantes, 1) AS gasolineras_por_100k\nFROM gas g\nJOIN pob p ON p.codigo_ccaa = g.codigo_ccaa\nJOIN comunidades c ON c.codigo_ccaa = g.codigo_ccaa\nORDER BY gasolineras_por_100k DESC",
+   "WITH pob AS (\n  SELECT habitantes FROM poblacion\n  WHERE sexo='Total' AND grupo_edad='Total' AND codigo_ccaa='00' AND anio = (SELECT MAX(anio) FROM poblacion)\n),\ng AS (SELECT COUNT(*) AS gasolineras FROM gasolineras WHERE codigo_ccaa <> '00')\nSELECT 'España' AS comunidad, g.gasolineras, p.habitantes,\n       ROUND(g.gasolineras * 100000.0 / p.habitantes, 1) AS gasolineras_por_100k\nFROM g, pob p",
+   "WITH pob AS (\n  SELECT codigo_ccaa, habitantes FROM poblacion\n  WHERE sexo='Total' AND grupo_edad='Total' AND anio = (SELECT MAX(anio) FROM poblacion)\n),\ngas AS (\n  SELECT codigo_ccaa, COUNT(*) AS gasolineras FROM gasolineras GROUP BY codigo_ccaa\n)\nSELECT c.nombre AS comunidad, ROUND(g.gasolineras * 100000.0 / p.habitantes, 1) AS gasolineras_por_100k\nFROM gas g\nJOIN pob p ON p.codigo_ccaa = g.codigo_ccaa\nJOIN comunidades c ON c.codigo_ccaa = g.codigo_ccaa\nORDER BY gasolineras_por_100k DESC"
+  ],
+  "fuentes": [
+   {
+    "tabla": "gasolineras",
+    "organismo": "Ministerio para la Transición Ecológica y el Reto Demográfico",
+    "conjunto": "Precios de carburantes en las estaciones de servicio (Geoportal de gasolineras)",
+    "url": "https://geoportalgasolineras.es/",
+    "licencia": "Información del sector público reutilizable según la Ley 37/2007 (citar la fuente y la fecha de actualización, sin alterar los datos)",
+    "cita": "Fuente: Ministerio para la Transición Ecológica y el Reto Demográfico, Geoportal de gasolineras",
+    "datos_hasta": "2026-11-25"
+   },
+   {
+    "tabla": "poblacion",
+    "organismo": "Instituto Nacional de Estadística (INE)",
+    "conjunto": "Estadística Continua de Población (ECP). Tabla 56940: población residente por fecha, sexo y edad (comunidades autónomas)",
+    "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=56940",
+    "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+    "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+    "datos_hasta": "1 de enero de 2026"
+   }
+  ],
+  "grafica": {
+   "tipo": "barras",
+   "titulo": "Gasolineras por cada 100.000 habitantes, por comunidad",
+   "eje_x": "comunidad",
+   "etiquetas": [
+    "Castilla-La Mancha",
+    "Extremadura",
+    "Navarra",
+    "Castilla y León",
+    "Aragón",
+    "Región de Murcia",
+    "Cantabria",
+    "Galicia",
+    "La Rioja",
+    "Andalucía",
+    "Comunidad Valenciana",
+    "Asturias",
+    "Canarias",
+    "Cataluña",
+    "Islas Baleares",
+    "País Vasco",
+    "Comunidad de Madrid",
+    "Ceuta",
+    "Melilla"
+   ],
+   "series": [
+    {
+     "nombre": "gasolineras_por_100k",
+     "valores": [
+      42.9,
+      42.2,
+      37.1,
+      34.4,
+      31.3,
+      29.3,
+      27.8,
+      27.1,
+      26.1,
+      24.4,
+      24.1,
+      23.7,
+      21.9,
+      18.2,
+      17.6,
+      15.8,
+      12.5,
+      11.9,
+      9.2
+     ]
+    }
+   ],
+   "truncado": false,
+   "sql": "WITH pob AS (\n  SELECT codigo_ccaa, habitantes FROM poblacion\n  WHERE sexo='Total' AND grupo_edad='Total' AND anio = (SELECT MAX(anio) FROM poblacion)\n),\ngas AS (\n  SELECT codigo_ccaa, COUNT(*) AS gasolineras FROM gasolineras GROUP BY codigo_ccaa\n)\nSELECT c.nombre AS comunidad, ROUND(g.gasolineras * 100000.0 / p.habitantes, 1) AS gasolineras_por_100k\nFROM gas g\nJOIN pob p ON p.codigo_ccaa = g.codigo_ccaa\nJOIN comunidades c ON c.codigo_ccaa = g.codigo_ccaa\nORDER BY gasolineras_por_100k DESC",
+   "fuentes": [
+    {
+     "tabla": "gasolineras",
+     "organismo": "Ministerio para la Transición Ecológica y el Reto Demográfico",
+     "conjunto": "Precios de carburantes en las estaciones de servicio (Geoportal de gasolineras)",
+     "url": "https://geoportalgasolineras.es/",
+     "licencia": "Información del sector público reutilizable según la Ley 37/2007 (citar la fuente y la fecha de actualización, sin alterar los datos)",
+     "cita": "Fuente: Ministerio para la Transición Ecológica y el Reto Demográfico, Geoportal de gasolineras",
+     "datos_hasta": "2026-11-25"
+    },
+    {
+     "tabla": "poblacion",
+     "organismo": "Instituto Nacional de Estadística (INE)",
+     "conjunto": "Estadística Continua de Población (ECP). Tabla 56940: población residente por fecha, sexo y edad (comunidades autónomas)",
+     "url": "https://www.ine.es/jaxiT3/Tabla.htm?t=56940",
+     "licencia": "CC BY 4.0 (aviso legal del INE: https://www.ine.es/dyngs/AYU/index.htm?cid=125)",
+     "cita": "Elaboración propia con datos extraídos del sitio web del INE: www.ine.es",
+     "datos_hasta": "1 de enero de 2026"
+    }
+   ]
+  },
+  "tabla": {
+   "columnas": [
+    "comunidad",
+    "gasolineras",
+    "habitantes",
+    "gasolineras_por_100k"
+   ],
+   "filas": [
+    [
+     "España",
+     11548,
+     49618622,
+     23.3
+    ]
+   ],
+   "truncado": false
+  },
+  "pasos": [
+   {
+    "herramienta": "listar_tablas",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "describir_tabla",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "consultar_sql",
+    "ok": true
+   },
+   {
+    "herramienta": "datos_grafica",
+    "ok": true
+   }
+  ],
+  "segundos": 9.25,
+  "estado": "ok"
+ }
+}

@@ -5,6 +5,11 @@ const $ = (id) => document.getElementById(id);
 const SVG = "http://www.w3.org/2000/svg";
 const SERIES = ["--series-1", "--series-2", "--series-3", "--series-4", "--series-5"];
 const numero = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 3 });
+// Modo escaparate (GitHub Pages): sin servidor; muestra respuestas reales generadas de antemano.
+const ESTATICO = document.documentElement.dataset.modo === "estatico";
+const REPO = "https://github.com/Carlosvd7/datos-abiertos-mcp";
+let respuestasGuardadas = {};
+const normalizar = (t) => t.toLowerCase().replace(/[\s¿?¡!.,;:]+/g, " ").trim();
 
 function el(etiqueta, atributos = {}, hijos = []) {
   const nodo = document.createElement(etiqueta);
@@ -166,10 +171,19 @@ function dibujarBarrasHorizontales(etiquetas, series, valores, ancho) {
   return lienzo;
 }
 
+const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+// Fechas ISO del primer día de mes («2020-01-01») se muestran como «ene 2020».
+function etiquetaCorta(valor) {
+  const texto = String(valor);
+  const m = /^(\d{4})-(\d{2})-01$/.exec(texto);
+  return m ? `${MESES[Number(m[2]) - 1]} ${m[1]}` : texto;
+}
+
 function dibujarGrafica(g) {
   const contenedor = $("grafica-svg");
   contenedor.replaceChildren();
-  const etiquetas = g.etiquetas.map(String);
+  const etiquetas = g.etiquetas.map(etiquetaCorta);
   const series = g.series.slice(0, SERIES.length);
   const valores = series.flatMap((s) => s.valores).filter((v) => typeof v === "number");
   if (!etiquetas.length || !valores.length) return false;
@@ -199,7 +213,9 @@ function dibujarGrafica(g) {
     lienzo.append(t);
   }
   // Etiquetas del eje X: una de cada N; la última siempre, quitando la anterior si quedaría pegada.
-  const cadaN = Math.ceil(etiquetas.length / Math.max(3, Math.floor(ancho / 75)));
+  const largo = Math.max(...etiquetas.map((e) => Math.min(e.length, 12)));
+  const caben = Math.max(2, Math.floor((ancho - 110) / (largo * 6.5 + 14)));
+  const cadaN = Math.ceil(etiquetas.length / caben);
   const ultima = etiquetas.length - 1;
   const visibles = new Set(etiquetas.map((_, i) => i).filter((i) => i % cadaN === 0));
   if (!visibles.has(ultima)) {
@@ -306,13 +322,28 @@ function estado(texto, { error = false, cargando = false } = {}) {
 }
 
 function restantes(r) {
-  if (!r) return;
+  if (!r || ESTATICO) return;
   $("contador").textContent = r.dia > 0
     ? `Te ${r.dia === 1 ? "queda 1 pregunta propia" : `quedan ${r.dia} preguntas propias`} hoy · las de ejemplo son gratis`
     : "Ya has hecho tu pregunta de hoy · las de ejemplo siguen disponibles";
 }
 
+function preguntarEstatico(texto) {
+  const datos = respuestasGuardadas[normalizar(texto)];
+  if (datos) { mostrarRespuesta(datos); return; }
+  $("resultado").hidden = true;
+  const caja = $("estado");
+  caja.hidden = false;
+  caja.className = "estado";
+  caja.replaceChildren(el("span", {}, [
+    "Esta versión publicada solo responde a las preguntas de ejemplo. Para preguntar lo que quieras, ejecútala en tu ordenador siguiendo las instrucciones del ",
+    el("a", { href: REPO, texto: "repositorio", rel: "noopener", target: "_blank" }),
+    ".",
+  ]));
+}
+
 async function preguntar(texto) {
+  if (ESTATICO) { preguntarEstatico(texto); return; }
   const boton = $("enviar");
   boton.disabled = true;
   $("resultado").hidden = true;
@@ -330,6 +361,15 @@ async function preguntar(texto) {
       if (resp.status === 429) restantes({ dia: 0, hora: 0 });
       return;
     }
+    mostrarRespuesta(datos);
+  } catch {
+    estado("No se ha podido conectar con el servidor.", { error: true });
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+function mostrarRespuesta(datos) {
     estado("");
     $("respuesta").replaceChildren(markdown(datos.respuesta || ""));
     // Se muestra antes de dibujar: la gráfica se ajusta al ancho visible del contenedor.
@@ -350,14 +390,8 @@ async function preguntar(texto) {
     );
     const llamadas = datos.pasos.length;
     $("metadatos").textContent = `${llamadas} llamada${llamadas === 1 ? "" : "s"} a herramientas MCP · ${numero.format(datos.segundos)} s`
-      + (datos.de_cache ? " · respuesta guardada, sin coste" : "");
+      + (ESTATICO ? " · respuesta real generada por el agente" : datos.de_cache ? " · respuesta guardada, sin coste" : "");
     restantes(datos.restantes);
-    $("resultado").hidden = false;
-  } catch {
-    estado("No se ha podido conectar con el servidor.", { error: true });
-  } finally {
-    boton.disabled = false;
-  }
 }
 
 async function iniciar() {
@@ -370,7 +404,18 @@ async function iniciar() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); $("formulario").requestSubmit(); }
   });
   try {
-    const info = await (await fetch("/api/info")).json();
+    const info = await (await fetch(ESTATICO ? "info.json" : "/api/info")).json();
+    if (ESTATICO) {
+      const lista = await (await fetch("respuestas.json")).json();
+      respuestasGuardadas = Object.fromEntries(Object.entries(lista).map(([p, r]) => [normalizar(p), r]));
+      $("contador").textContent = `Escaparate: respuestas reales del agente (${info.modelo}), generadas el ${info.generado}`;
+      $("nota-uso").replaceChildren(
+        "Esta es la versión publicada como escaparate: las preguntas de ejemplo muestran respuestas reales que el agente generó el ",
+        `${info.generado}. Para hacer preguntas libres, ejecuta el proyecto en local (`,
+        el("a", { href: REPO, texto: "instrucciones en GitHub", rel: "noopener", target: "_blank" }),
+        "). Las respuestas las genera un modelo de IA: revisa la consulta y la fuente antes de usar una cifra.",
+      );
+    }
     $("lista-ejemplos").replaceChildren(...info.ejemplos.map((ej) => {
       const chip = el("button", { type: "button", clase: "chip", texto: ej });
       chip.addEventListener("click", () => { $("pregunta").value = ej; preguntar(ej); });

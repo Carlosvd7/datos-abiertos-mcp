@@ -167,6 +167,26 @@ def _ip_cliente(request: Request) -> str:
     return request.client.host if request.client else "desconocida"
 
 
+def carga_respuesta(r: agente.Respuesta) -> dict[str, Any]:
+    """Lo que la página necesita de una respuesta del agente (sin la trayectoria completa)."""
+    filas = (r.resultado_final or {}).get("filas", [])
+    return {
+        "respuesta": r.respuesta,
+        "sql": r.sql,
+        "fuentes": r.fuentes,
+        "grafica": r.grafica,
+        "tabla": r.resultado_final
+        and {
+            "columnas": r.resultado_final["columnas"],
+            "filas": filas[:50],
+            "truncado": r.resultado_final["truncado"] or len(filas) > 50,
+        },
+        "pasos": [{"herramienta": p.herramienta, "ok": p.ok} for p in r.pasos],
+        "segundos": r.segundos,
+        "estado": r.estado,
+    }
+
+
 def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | None = None) -> FastAPI:
     """Crea la app. En tests se pueden inyectar el cliente MCP y el agente."""
     limitador = LimitadorDeUso(
@@ -270,21 +290,7 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
             presupuesto.gastado,
             presupuesto.limite_usd,
         )
-        datos = {
-            "respuesta": r.respuesta,
-            "sql": r.sql,
-            "fuentes": r.fuentes,
-            "grafica": r.grafica,
-            "tabla": r.resultado_final
-            and {
-                "columnas": r.resultado_final["columnas"],
-                "filas": r.resultado_final["filas"][:50],
-                "truncado": r.resultado_final["truncado"] or len(r.resultado_final["filas"]) > 50,
-            },
-            "pasos": [{"herramienta": p.herramienta, "ok": p.ok} for p in r.pasos],
-            "segundos": r.segundos,
-            "estado": r.estado,
-        }
+        datos = carga_respuesta(r)
         if r.estado == "ok":
             cache.guardar(pregunta, datos)
         return JSONResponse({**datos, "de_cache": False, "restantes": limitador.restantes(ip)})

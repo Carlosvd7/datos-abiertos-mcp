@@ -1,0 +1,63 @@
+{
+ "modelo": "claude-haiku-5-5",
+ "generado": "26/11/2026",
+ "ejemplos": [
+  "¿Cuál es la tasa de paro en España según el último dato de la EPA?",
+  "¿Qué comunidades tienen más paro? Muéstramelo en una gráfica.",
+  "¿Cómo ha evolucionado la inflación en España desde 2020?",
+  "¿En qué comunidad es más barata la gasolina 95 esta semana?",
+  "¿Qué porcentaje de la población de España tiene 65 años o más?",
+  "¿Cuántas gasolineras hay por cada 100.000 habitantes en cada comunidad?"
+ ],
+ "tablas": [
+  {
+   "tabla": "carburantes_semanal",
+   "descripcion": "Precio de los carburantes por comunidad, cada lunes de las últimas semanas, calculado a partir del histórico diario de todas las gasolineras de venta al público.",
+   "filas_aprox": 2522,
+   "fuente": "Ministerio para la Transición Ecológica y el Reto Demográfico",
+   "datos_hasta": "2026-11-23"
+  },
+  {
+   "tabla": "comunidades",
+   "descripcion": "Catálogo de comunidades y ciudades autónomas con su código INE. Incluye '00' = España.",
+   "filas_aprox": 20,
+   "fuente": null,
+   "datos_hasta": null
+  },
+  {
+   "tabla": "fuentes",
+   "descripcion": "Origen, licencia y fecha de descarga de cada tabla. Cítalo al responder.",
+   "filas_aprox": 5,
+   "fuente": null,
+   "datos_hasta": null
+  },
+  {
+   "tabla": "gasolineras",
+   "descripcion": "Foto de todas las gasolineras de venta al público de España con sus precios (€/litro) en vigor en la fecha de descarga. Precio NULL = esa gasolinera no vende ese carburante.",
+   "filas_aprox": 11548,
+   "fuente": "Ministerio para la Transición Ecológica y el Reto Demográfico",
+   "datos_hasta": "2026-11-25"
+  },
+  {
+   "tabla": "ipc",
+   "descripcion": "Inflación: tasas de variación (%) del índice general de precios de consumo, mensual, por comunidad, desde enero de 2002. La inflación interanual es variacion_anual.",
+   "filas_aprox": 5960,
+   "fuente": "Instituto Nacional de Estadística (INE)",
+   "datos_hasta": "2026-10"
+  },
+  {
+   "tabla": "paro_epa",
+   "descripcion": "Tasa de paro trimestral (%) de la Encuesta de Población Activa, por comunidad, sexo y grupo de edad, desde 2002. Para el total de una comunidad filtra sexo = 'Total' y grupo_edad = 'Total'. Las tasas no se pueden sumar ni promediar sin ponderar.",
+   "filas_aprox": 41409,
+   "fuente": "Instituto Nacional de Estadística (INE)",
+   "datos_hasta": "2026T3"
+  },
+  {
+   "tabla": "poblacion",
+   "descripcion": "Población residente a 1 de enero de cada año (desde 2002) por comunidad, sexo y grupo de edad. Para el total usa sexo = 'Total' y grupo_edad = 'Total'; los grupos de edad (sin 'Total') suman el total.",
+   "filas_aprox": 9000,
+   "fuente": "Instituto Nacional de Estadística (INE)",
+   "datos_hasta": "1 de enero de 2026"
+  }
+ ]
+}
