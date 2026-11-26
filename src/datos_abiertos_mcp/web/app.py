@@ -174,7 +174,7 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
         _entero("DEMO_PREGUNTAS_POR_DIA_IP", 1),
         _entero("DEMO_PREGUNTAS_POR_DIA_TOTAL", 50),
     )
-    presupuesto = PresupuestoDiario(_decimal("DEMO_PRESUPUESTO_DIA_USD", 0.15))
+    presupuesto = PresupuestoDiario(_decimal("DEMO_PRESUPUESTO_DIA_USD", 0.10))
     cache = CacheRespuestas()
     claves_ejemplos = {CacheRespuestas.clave(e) for e in EJEMPLOS}
     concurrencia = asyncio.Semaphore(_entero("DEMO_CONCURRENCIA", 3))
