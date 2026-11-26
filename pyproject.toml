@@ -3,6 +3,7 @@ name = "datos-abiertos-mcp"
 version = "0.1.0"
 description = "Habla con los datos públicos de España: servidor MCP + agente text-to-SQL sobre datos abiertos (INE, MITECO) en DuckDB"
 authors = [{ name = "Carlos Manuel Velázquez Diego" }]
+license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
     "anthropic>=2.14.0",

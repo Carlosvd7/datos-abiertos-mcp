@@ -276,6 +276,8 @@ veredicto del juez), están en `eval/resultados/`.
 
 Este proyecto no está afiliado ni respaldado por el INE ni por el Ministerio.
 
+El código se publica bajo licencia [MIT](LICENSE). Los datos conservan la licencia de su fuente.
+
 ## Estructura
 
 ```
