@@ -8,6 +8,4 @@ data/raw/
 data/*.duckdb
 data/*.duckdb.wal
 data/*.tmp.duckdb
-eval/resultados/*.jsonl
-!eval/resultados/.gitkeep
 .claude/

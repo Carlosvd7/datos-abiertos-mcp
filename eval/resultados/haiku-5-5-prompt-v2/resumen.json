@@ -1,0 +1,160 @@
+{
+  "intentos_puntuados": 80,
+  "intentos_con_error_de_infraestructura": 0,
+  "ejecucion": {
+    "aciertos": 65,
+    "n": 74,
+    "tasa": 0.878,
+    "ic95": [
+      0.785,
+      0.935
+    ]
+  },
+  "cita_fuente": {
+    "aciertos": 74,
+    "n": 74,
+    "tasa": 1.0,
+    "ic95": [
+      0.951,
+      1.0
+    ]
+  },
+  "por_categoria": {
+    "carburantes": {
+      "ejecucion": {
+        "aciertos": 16,
+        "n": 16,
+        "tasa": 1.0,
+        "ic95": [
+          0.806,
+          1.0
+        ]
+      },
+      "juez": {
+        "aciertos": 16,
+        "n": 16,
+        "tasa": 1.0,
+        "ic95": [
+          0.806,
+          1.0
+        ]
+      }
+    },
+    "combinada": {
+      "ejecucion": {
+        "aciertos": 6,
+        "n": 6,
+        "tasa": 1.0,
+        "ic95": [
+          0.61,
+          1.0
+        ]
+      },
+      "juez": {
+        "aciertos": 6,
+        "n": 6,
+        "tasa": 1.0,
+        "ic95": [
+          0.61,
+          1.0
+        ]
+      }
+    },
+    "ipc": {
+      "ejecucion": {
+        "aciertos": 10,
+        "n": 14,
+        "tasa": 0.714,
+        "ic95": [
+          0.454,
+          0.883
+        ]
+      },
+      "juez": {
+        "aciertos": 14,
+        "n": 14,
+        "tasa": 1.0,
+        "ic95": [
+          0.785,
+          1.0
+        ]
+      }
+    },
+    "paro": {
+      "ejecucion": {
+        "aciertos": 20,
+        "n": 22,
+        "tasa": 0.909,
+        "ic95": [
+          0.722,
+          0.975
+        ]
+      },
+      "juez": {
+        "aciertos": 22,
+        "n": 22,
+        "tasa": 1.0,
+        "ic95": [
+          0.851,
+          1.0
+        ]
+      }
+    },
+    "poblacion": {
+      "ejecucion": {
+        "aciertos": 13,
+        "n": 16,
+        "tasa": 0.812,
+        "ic95": [
+          0.57,
+          0.934
+        ]
+      },
+      "juez": {
+        "aciertos": 16,
+        "n": 16,
+        "tasa": 1.0,
+        "ic95": [
+          0.806,
+          1.0
+        ]
+      }
+    }
+  },
+  "estados": {
+    "ok": 80
+  },
+  "modelos_servidos": {
+    "claude-haiku-5-5": 80
+  },
+  "media_llamadas_mcp": 3.73,
+  "mediana_segundos": 4.72,
+  "coste_total_usd": 0.082,
+  "coste_medio_usd": 0.001,
+  "juez": {
+    "aciertos": 74,
+    "n": 74,
+    "tasa": 1.0,
+    "ic95": [
+      0.951,
+      1.0
+    ]
+  },
+  "sin_datos_bien_gestionadas": {
+    "aciertos": 6,
+    "n": 6,
+    "tasa": 1.0,
+    "ic95": [
+      0.61,
+      1.0
+    ]
+  },
+  "coste_juez_usd": 0.233,
+  "fecha": "2026-11-26T01:05:33+00:00",
+  "modelo": "claude-haiku-5-5",
+  "esfuerzo": "medium",
+  "version_prompt": "v2",
+  "modelo_juez": "claude-sonnet-5-5",
+  "preguntas": 40,
+  "repeticiones": 2
+}

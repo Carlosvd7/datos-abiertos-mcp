@@ -6,7 +6,10 @@ consulta SQL que la produjo y la fuente.**
 
 > *English summary below.*
 
-<!-- RESULTADOS-RESUMEN -->
+**Resultados de la evaluación (40 preguntas × 2 repeticiones, Claude Haiku 5.5):** el **100 %** de
+las respuestas son correctas según un juez independiente, y en el **88 %** de los casos la propia consulta
+SQL devuelve exactamente la cifra de referencia. Cuesta **~0,001 $ por pregunta** y tarda **~5 s**
+(mediana). [Detalles](#resultados).
 
 ---
 
@@ -197,7 +200,46 @@ uv run evaluar --solo paro-03 ipc-02
 
 ### Resultados
 
-<!-- RESULTADOS -->
+Ejecutada el 26/11/2026 sobre los datos de esa fecha (paro hasta 3T 2026, población a 1 de enero de
+2026, IPC hasta octubre de 2026, carburantes hasta el 23/11/2026). Agente: **Claude Haiku 5.5**
+(esfuerzo `medium`). Juez: **Claude Sonnet 5.5**. 40 preguntas × 2 repeticiones = 80 intentos;
+0 errores de infraestructura. Intervalos de confianza de Wilson al 95 %.
+
+| Métrica | Prompt v1 | **Prompt v2** |
+|---|---|---|
+| Respuesta correcta (juez), 74 intentos | 97,3 % [90,7 – 99,3] | **100 %** [95,1 – 100] |
+| Precisión por ejecución (el SQL devuelve la respuesta), 74 intentos | 55,4 % [44,1 – 66,2] | **87,8 %** [78,5 – 93,5] |
+| Preguntas sin datos bien gestionadas, 6 intentos | 100 % | **100 %** |
+| Cita la fuente | 100 % | **100 %** |
+| Coste medio del agente por pregunta | 0,0010 $ | **0,0010 $** |
+| Mediana de tiempo por pregunta | 4,8 s | **4,7 s** |
+| Llamadas MCP por pregunta (media) | 3,8 | **3,7** |
+
+Precisión por ejecución en v2, por tema: carburantes 16/16, combinadas 6/6, paro 20/22,
+población 13/16, IPC 10/14. Coste total de cada pasada: ~0,08 $ el agente + ~0,23 $ el juez.
+
+**Qué cambió de v1 a v2.** En v1 el agente acertaba casi siempre, pero a menudo traía una lista de
+datos (por ejemplo los 12 meses de 2020) y contaba o restaba «de cabeza»: la cifra final no salía de
+ninguna consulta que el usuario pudiera revisar. En v2 se añadió una única instrucción general al
+prompt del agente (*«haz en SQL todos los cálculos que pida la pregunta; la consulta debe devolver
+directamente la cifra»*). No se tocó ninguna pregunta ni el evaluador entre las dos pasadas. En la
+misma revisión se corrigió un fallo del evaluador (solo miraba la última consulta del agente, no la
+que contenía la respuesta); la columna v1 está recalculada con el evaluador corregido sobre las
+respuestas guardadas.
+
+**Revisión manual de los fallos.**
+
+- Los 9 intentos que no pasan por ejecución en v2 tienen respuesta correcta: el SQL trae algo más que
+  la respuesta (un top 5 en vez del primero, o la serie completa con el dato en otra fila). La
+  métrica es estricta a propósito.
+- En v1, de los 2 fallos del juez, uno era real (una conclusión falsa sobre una serie) y otro era un
+  **error del propio juez** (la cifra era correcta y su explicación lo reconocía). No se ajustó el
+  juez para corregirlo.
+- El juez valora la cifra que responde a la pregunta: en un caso (ipc-06) la respuesta acertaba la
+  cifra pero se contradecía en un dato secundario de contexto, y el juez no lo penalizó.
+
+Los resultados completos, con la trayectoria de cada pregunta (llamadas MCP, SQL, resultados,
+veredicto del juez), están en `eval/resultados/`.
 
 ## Limitaciones
 
@@ -212,7 +254,8 @@ uv run evaluar --solo paro-03 ipc-02
   Creative Commons explícita; se reutiliza como información del sector público (Ley 37/2007) citando
   la fuente y la fecha.
 - **La evaluación es pequeña** (40 preguntas): los intervalos de confianza son amplios y una sola
-  pregunta mueve ~3 puntos. Mide bien regresiones grandes, no diferencias finas entre modelos.
+  pregunta mueve ~3 puntos. Mide bien regresiones grandes, no diferencias finas entre modelos. El
+  juez es otro modelo de lenguaje y puede equivocarse (se encontró un error suyo al revisar a mano).
 - **El límite de uso de la demo vive en memoria**: vale para una instancia; con varias haría falta un
   almacén compartido (p. ej. Redis).
 - Un modelo de lenguaje puede equivocarse al interpretar una pregunta ambigua: por eso la demo
@@ -265,7 +308,9 @@ showing the figure, the SQL that produced it and the source.
 - **Evaluation**: 40 Spanish questions (37 with hand-written reference SQL, 3 unanswerable), execution
   accuracy computed against the live database, plus an LLM judge (Claude Sonnet 5.5) for the final
   answer, cost and latency.
-<!-- RESULTS-EN -->
+- **Results** (40 questions × 2 runs, Claude Haiku 5.5): **100 %** of final answers judged correct,
+  **88 %** execution accuracy (the SQL itself returns the reference answer; 55 % before a one-line
+  prompt change asking the agent to do all arithmetic in SQL), ~$0.001 and ~5 s per question.
 - **Web demo**: FastAPI + dependency-free page; API key server-side only, per-IP and global rate limits,
   strict CSP, accessible SVG charts. Dockerfile included.
 
