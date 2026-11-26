@@ -207,7 +207,9 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
         respuesta = await call_next(request)
         respuesta.headers["Content-Security-Policy"] = (
             "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
-            "connect-src 'self'; frame-ancestors 'self' https://carlosmanuelvelazquez.netlify.app"
+            "connect-src 'self'; "
+            # Se puede incrustar en Hugging Face Spaces (que la muestra en un iframe) y en el portfolio.
+            "frame-ancestors 'self' https://huggingface.co https://carlosmanuelvelazquez.netlify.app"
         )
         respuesta.headers["X-Content-Type-Options"] = "nosniff"
         respuesta.headers["Referrer-Policy"] = "no-referrer"
