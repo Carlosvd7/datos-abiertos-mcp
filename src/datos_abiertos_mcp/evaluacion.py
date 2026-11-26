@@ -142,6 +142,34 @@ def comparar(comparacion: str, oro: list[list[Any]], obtenido: list[list[Any]] |
     return True, "mismas filas"
 
 
+def resultados_sql(trayectoria: list[dict]) -> list[list[list[Any]]]:
+    """Filas de cada consulta_sql que el agente ejecutó con éxito, en orden."""
+    return [
+        p["resultado"]["filas"]
+        for p in trayectoria
+        if p["herramienta"] == "consultar_sql" and p["ok"] and isinstance(p["resultado"], dict)
+    ]
+
+
+def calificar_ejecucion(comparacion: str, oro: list[list[Any]], resultados: list[list[list[Any]]]) -> dict:
+    """Aprueba si ALGUNA consulta del agente devolvió la respuesta de referencia.
+
+    El agente a veces hace después otra consulta de contexto, así que no basta con mirar la última.
+    """
+    if not resultados:
+        return {"ok": False, "motivo": "el agente no obtuvo ningún resultado de SQL", "consulta": None}
+    motivo = ""
+    for i, filas in enumerate(resultados):
+        ok, motivo = comparar(comparacion, oro, filas)
+        if ok:
+            return {"ok": True, "motivo": motivo, "consulta": i + 1}
+    return {
+        "ok": False,
+        "motivo": f"ninguna de {len(resultados)} consultas; última: {motivo}",
+        "consulta": None,
+    }
+
+
 def cita_fuente(texto: str) -> bool:
     t = _sin_tildes(texto)
     return any(k in t for k in ("ine", "instituto nacional de estadistica", "ministerio", "geoportal"))
@@ -236,7 +264,6 @@ async def evaluar_caso(
         "estado": respuesta.estado,
         "respuesta": respuesta.respuesta,
         "sql_agente": respuesta.sql,
-        "resultado_agente": (respuesta.resultado_final or {}).get("filas"),
         "cita_fuente": cita_fuente(respuesta.respuesta),
         "modelos_servidos": respuesta.modelos_servidos,
         "llamadas_modelo": respuesta.llamadas_modelo,
@@ -251,8 +278,7 @@ async def evaluar_caso(
         "trayectoria": r["pasos"],
     }
     if caso.comparacion != "sin_datos":
-        ok, motivo = comparar(caso.comparacion, oro or [], fila["resultado_agente"])
-        fila["ejecucion"] = {"ok": ok, "motivo": motivo}
+        fila["ejecucion"] = calificar_ejecucion(caso.comparacion, oro or [], resultados_sql(r["pasos"]))
     if juez is not None and respuesta.estado == "ok":
         fila["juez"] = await juzgar(juez, caso, oro, respuesta.respuesta)
     fila["segundos_total"] = round(time.perf_counter() - inicio, 2)
@@ -395,12 +421,41 @@ async def ejecutar(
             "fecha": datetime.now(UTC).isoformat(timespec="seconds"),
             "modelo": agente.MODELO,
             "esfuerzo": agente.ESFUERZO,
+            "version_prompt": agente.VERSION_PROMPT,
             "modelo_juez": MODELO_JUEZ if con_juez else None,
             "preguntas": len(casos),
             "repeticiones": repeticiones,
         }
     )
     (salida / "resumen.json").write_text(json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
+    return resumen
+
+
+def recalificar(carpeta: Path) -> dict:
+    """Vuelve a puntuar una ejecución guardada (sin llamar a la API) con el evaluador actual."""
+    ruta = carpeta / "resultados.jsonl"
+    filas = [json.loads(linea) for linea in ruta.read_text(encoding="utf-8").splitlines() if linea]
+    for f in filas:
+        f.pop("resultado_agente", None)
+        if f["comparacion"] != "sin_datos":
+            f["ejecucion"] = calificar_ejecucion(f["comparacion"], f["oro"], resultados_sql(f["trayectoria"]))
+    lineas = [json.dumps(f, ensure_ascii=False, default=str) for f in filas]
+    ruta.write_text("\n".join(lineas) + "\n", encoding="utf-8")
+    anterior = json.loads((carpeta / "resumen.json").read_text(encoding="utf-8"))
+    errores = anterior.get("intentos_con_error_de_infraestructura", 0)
+    resumen = resumir(filas, errores, any("juez" in f for f in filas))
+    for clave in (
+        "fecha",
+        "modelo",
+        "esfuerzo",
+        "modelo_juez",
+        "preguntas",
+        "repeticiones",
+        "version_prompt",
+    ):
+        if clave in anterior:
+            resumen[clave] = anterior[clave]
+    (carpeta / "resumen.json").write_text(json.dumps(resumen, ensure_ascii=False, indent=2), encoding="utf-8")
     return resumen
 
 
@@ -415,9 +470,20 @@ def main() -> None:
     parser.add_argument("--paralelo", type=int, default=4)
     parser.add_argument("--solo", nargs="*", help="ids de preguntas a evaluar")
     parser.add_argument("--salida", type=Path, default=None)
+    parser.add_argument(
+        "--recalificar", type=Path, help="vuelve a puntuar una carpeta de resultados guardada"
+    )
     args = parser.parse_args()
     if sys.platform == "win32":
         sys.stdout.reconfigure(encoding="utf-8")
+    if args.recalificar:
+        resumen = recalificar(args.recalificar)
+        print(
+            json.dumps(
+                {k: v for k, v in resumen.items() if k != "por_categoria"}, ensure_ascii=False, indent=2
+            )
+        )
+        return
     casos = cargar_casos()
     if args.solo:
         casos = [c for c in casos if c.id in set(args.solo)]

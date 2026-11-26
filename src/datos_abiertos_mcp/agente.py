@@ -27,6 +27,7 @@ from datos_abiertos_mcp import config  # noqa: F401  (carga .env antes de leer l
 MODELO = os.environ.get("CLAUDE_MODELO", "claude-haiku-5-5")
 ESFUERZO = os.environ.get("CLAUDE_ESFUERZO", "medium")
 MAX_PASOS = 10
+VERSION_PROMPT = "v2"  # v1: sin la regla de «cálculos en SQL»; ver README (evaluación)
 BETAS = ["server-side-fallback-2026-07-01"]
 # Modelos con reintento automático en otro modelo si rechazan la petición (Haiku no lo tiene).
 CON_FALLBACK = ("claude-opus-5", "claude-sonnet-5-5", "claude-fable-5")
@@ -45,6 +46,10 @@ usando SOLO las herramientas del servidor MCP «datos-abiertos-es» (DuckDB).
 Cómo trabajar:
 1. Si no conoces ya las tablas, llama a listar_tablas y describe las que vayas a usar.
 2. Escribe SQL de DuckDB y ejecútalo con consultar_sql. Si da error, corrígelo y reintenta.
+   Haz en SQL todos los cálculos que pida la pregunta (diferencias, medias, recuentos,
+   porcentajes, máximos y mínimos): la consulta debe devolver directamente la cifra o las filas
+   que responden, con la respuesta en la primera fila. No cuentes, restes ni promedies de cabeza.
+   Si quieres dar contexto adicional, usa una consulta aparte.
 3. Si la pregunta pide una evolución o una comparación entre varias categorías, llama además
    a datos_grafica con la consulta que mejor la muestre.
 4. Responde con los números que devolvió la consulta, nunca con datos de memoria. Si los datos

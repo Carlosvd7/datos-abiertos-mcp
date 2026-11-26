@@ -88,3 +88,20 @@ def test_oraculo_y_nulo_sobre_datos_reales():
         for c, otro in zip(casos, casos[1:] + casos[:1], strict=True)
     )
     assert falsos <= 1
+
+
+def test_calificar_acepta_cualquier_consulta_del_agente():
+    from datos_abiertos_mcp.evaluacion import calificar_ejecucion, resultados_sql
+
+    trayectoria = [
+        {"herramienta": "listar_tablas", "ok": True, "resultado": {"tablas": []}},
+        {"herramienta": "consultar_sql", "ok": False, "resultado": "Error"},
+        {"herramienta": "consultar_sql", "ok": True, "resultado": {"filas": [[10.18]]}},
+        {"herramienta": "consultar_sql", "ok": True, "resultado": {"filas": [["contexto", 9.9]]}},
+    ]
+    resultados = resultados_sql(trayectoria)
+    assert resultados == [[[10.18]], [["contexto", 9.9]]]
+    r = calificar_ejecucion("valor", [[10.18]], resultados)
+    assert r["ok"] and r["consulta"] == 1
+    assert not calificar_ejecucion("valor", [[7.0]], resultados)["ok"]
+    assert not calificar_ejecucion("valor", [[10.18]], [])["ok"]
