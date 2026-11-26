@@ -24,10 +24,19 @@ from mcp import Client, StdioServerParameters
 
 from datos_abiertos_mcp import config  # noqa: F401  (carga .env antes de leer las variables)
 
-MODELO = os.environ.get("CLAUDE_MODELO", "claude-opus-5-5")
+MODELO = os.environ.get("CLAUDE_MODELO", "claude-haiku-5-5")
 ESFUERZO = os.environ.get("CLAUDE_ESFUERZO", "medium")
 MAX_PASOS = 10
 BETAS = ["server-side-fallback-2026-07-01"]
+# Modelos con reintento automático en otro modelo si rechazan la petición (Haiku no lo tiene).
+CON_FALLBACK = ("claude-opus-5", "claude-sonnet-5-5", "claude-fable-5")
+
+
+def opciones_fallback(modelo: str) -> dict[str, Any]:
+    if modelo.startswith(CON_FALLBACK):
+        return {"betas": BETAS, "fallbacks": "default"}
+    return {}
+
 
 SISTEMA = """\
 Eres un analista de datos que responde preguntas sobre datos públicos oficiales de España
@@ -134,8 +143,7 @@ class Agente:
                 messages=mensajes,
                 output_config={"effort": ESFUERZO},
                 cache_control={"type": "ephemeral"},
-                betas=BETAS,
-                fallbacks="default",
+                **opciones_fallback(self.modelo),
             )
             lectura = mensaje.usage.cache_read_input_tokens or 0
             escritura = mensaje.usage.cache_creation_input_tokens or 0

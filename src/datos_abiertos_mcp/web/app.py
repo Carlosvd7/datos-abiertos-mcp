@@ -107,7 +107,7 @@ def crear_app(*, cliente_mcp: Client | None = None, agente_: agente.Agente | Non
     limitador = LimitadorDeUso(
         _entero("DEMO_PREGUNTAS_POR_HORA_IP", 5),
         _entero("DEMO_PREGUNTAS_POR_DIA_IP", 20),
-        _entero("DEMO_PREGUNTAS_POR_DIA_TOTAL", 300),
+        _entero("DEMO_PREGUNTAS_POR_DIA_TOTAL", 50),
     )
     concurrencia = asyncio.Semaphore(_entero("DEMO_CONCURRENCIA", 3))
     estado: dict[str, Any] = {}

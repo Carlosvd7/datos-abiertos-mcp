@@ -83,7 +83,7 @@ flowchart LR
    suman España, tasas o precios fuera de rango). Todo se reconstruye en ~11 s con la caché.
 2. **Servidor MCP** (`servidor_mcp.py`, SDK oficial de MCP para Python): cuatro herramientas de solo
    lectura que explican al modelo qué significa cada columna, qué valores admite y cuál es su rango.
-3. **Agente** (`agente.py`): Claude Opus 5.5 recibe la pregunta y las herramientas del servidor MCP,
+3. **Agente** (`agente.py`): Claude (Haiku 5.5 por defecto, configurable con `CLAUDE_MODELO`) recibe la pregunta y las herramientas del servidor MCP,
    explora el esquema, escribe el SQL, lo corrige si falla y responde. El bucle registra el SQL
    ejecutado, las fuentes, los datos de la gráfica, los tokens y el modelo que respondió.
 4. **Demo web** (`web/`): FastAPI + una página HTML/JS sin dependencias externas.
@@ -105,7 +105,7 @@ capas independientes:
 | **Base de datos** | DuckDB se abre en modo **solo lectura**, con `enable_external_access = false` (no puede leer ni escribir ficheros ni URLs), sin instalar ni cargar extensiones, con la configuración bloqueada (`lock_configuration`), 512 MB de memoria y 2 hilos. |
 | **Validación del SQL** | Con `sqlglot`: una sola sentencia; tiene que ser una consulta (`SELECT`/`WITH`/`UNION`); solo puede leer las tablas publicadas (ni `information_schema`, ni otras bases de datos, ni funciones de tabla como `read_csv` o `glob`); se rechazan funciones como `getenv`, `current_setting`, `read_*`… |
 | **Ejecución** | Límite de **10 s** por consulta (se interrumpe) y de **500 filas** devueltas. |
-| **Demo web** | La clave de Claude solo existe en el servidor; límites por IP (5 preguntas/hora, 20/día) y tope global diario; preguntas de 3 a 300 caracteres; Content-Security-Policy estricta; el texto del modelo se inserta siempre como texto, nunca como HTML. |
+| **Demo web** | La clave de Claude solo existe en el servidor; límites por IP (5 preguntas/hora, 20/día) y tope global de 50 preguntas/día; preguntas de 3 a 300 caracteres; Content-Security-Policy estricta; el texto del modelo se inserta siempre como texto, nunca como HTML. |
 | **Secretos** | El subproceso MCP no recibe la clave de la API (no la necesita). `.env` está en `.gitignore`. |
 
 Los tests (`tests/test_seguridad.py`) prueban más de 30 intentos de abuso: `DROP`, `COPY … TO`,
@@ -260,7 +260,7 @@ showing the figure, the SQL that produced it and the source.
   `datos_grafica`. Defence in depth: read-only DuckDB with external access and extensions disabled,
   `sqlglot` validation (single read-only query, allow-listed tables, no file/env functions), 10 s
   timeout and 500-row cap. 30+ abuse tests.
-- **Agent**: Claude Opus 5.5 explores the schema through MCP, writes and self-corrects SQL, and answers
+- **Agent**: Claude (Haiku 5.5 by default, configurable) explores the schema through MCP, writes and self-corrects SQL, and answers
   with the query, data and citation.
 - **Evaluation**: 40 Spanish questions (37 with hand-written reference SQL, 3 unanswerable), execution
   accuracy computed against the live database, plus an LLM judge (Claude Sonnet 5.5) for the final

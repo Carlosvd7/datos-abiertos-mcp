@@ -55,6 +55,8 @@ TIEMPO_MAX_CASO_S = 300
 PRECIOS = {
     "claude-opus-5-5": (4.00, 20.00, 0.20, 5.00),
     "claude-sonnet-5-5": (2.00, 10.00, 0.10, 2.50),
+    # Haiku 5.5: precio publicado hasta 100K tokens de prompt; caché estimada a 0,1x / 1,25x.
+    "claude-haiku-5-5": (0.10, 0.50, 0.01, 0.125),
 }
 
 COMPARACIONES = {"valor", "filas", "filas_ordenadas", "sin_datos"}
@@ -187,8 +189,7 @@ async def juzgar(cliente: AsyncAnthropic, caso: Caso, oro: list[list[Any]] | Non
         ],
         output_format=Veredicto,
         output_config={"effort": "low"},
-        betas=agente.BETAS,
-        fallbacks="default",
+        **agente.opciones_fallback(MODELO_JUEZ),
     )
     v = mensaje.parsed_output
     if v is None:
